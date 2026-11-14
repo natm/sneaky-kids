@@ -23,7 +23,18 @@ It's 2am at Llwynygorras. Seth and Dylan sneak from the back bedroom down to the
 - Dressing gowns: press E (✋) by the hook to put one on. Without a gown a boy gets cold and shivers (an alert). The gown's pockets carry items: Seth 2, Dylan 1 (Dylan always holds his toy dog).
 - Items in the bedroom (choose 3 of 4): torch (shows floor hazards in the dark), slippers (no creaks), dog food (feeds a woken dog, 2 portions), chocolate (bribes Mum once).
 - Hazards: motion sensors (only see movement), door reed switches (need a fridge magnet), creaky boards, random clothes on the landing and wrappers in the kitchen (jump over), sleeping dogs Molly and Penny (tiptoe; woken dogs chase), Dad dozing on the lounge sofa (about 1 game in 4; game over if he sees you move past the door), Mum (about 2 games in 5; chases, sends both boys back to bed).
-- Five alerts and Dad wakes up: game over.
+- Difficulty is picked at the start of **every** game (Nat, 2026-11-14), in `MODES` in `index.html`. Normal is the original game.
+
+  | | Simple | Normal | Hard |
+  |---|---|---|---|
+  | Alerts before Dad wakes | 8 | 5 | 3 |
+  | Motion sensor looking | 1.6 s of 5.2 s | 2.2 s of 4.6 s | 2.8 s of 4.6 s |
+  | Dad on the sofa / looks for | never | 1 in 4 / 1.4 s | 1 in 2 / 2 s |
+  | Mum chases / her speed | 15% / 130 | 40% / 160 | 70% / 185 |
+  | Clothes + wrappers | none | 0–2 each | 2–3 + 2 |
+  | Dog wake distance / chase speed | 70% / 150 | 100% / 200 | 120% / 225 |
+  | Seconds before cold without a gown | 20 | 10 | 7 |
+  | How far apart the boys can get | 320 | 240 | 200 |
 
 ## Working with Nat
 

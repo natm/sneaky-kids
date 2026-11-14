@@ -67,6 +67,11 @@ canvas{display:block;width:100%;height:100%}
 .tile span{display:block;font-size:13px;line-height:1.35;color:var(--ink)}
 kbd{font-family:var(--mono);font-size:12px;background:var(--panel);border:1px solid #3a4782;border-bottom-width:2px;border-radius:5px;padding:1px 6px;margin:0 2px;color:var(--ink)}
 .card .keys{line-height:2}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;width:100%}
+.card .mode{background:var(--panel);color:var(--ink);border:1px solid #3a4782;border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;text-align:left;align-self:stretch;font-weight:400}
+.card .mode b{color:var(--moon);font-size:20px;font-weight:700}
+.card .mode span{font-size:13px;line-height:1.35}
+.card .mode:hover,.card .mode.last{border-color:var(--moon)}
 .card .ver{font-size:11px;color:var(--dim);margin:0}
 .card .touch{display:none;color:var(--dim);font-size:13px;line-height:1.6}
 /* phones: compact two-column picture grid, details on tap, touch controls instead of keys */
@@ -140,7 +145,7 @@ button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
           <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="22" cy="48" rx="15" ry="6" fill="#7a5636"/><ellipse cx="36" cy="49" rx="6" ry="5" fill="#7a5636"/><ellipse cx="35" cy="45" rx="2.5" ry="4.5" fill="#4e341f"/><ellipse cx="34" cy="31" rx="13" ry="5" fill="#e3cfa4"/><ellipse cx="46" cy="32" rx="5.5" ry="4.5" fill="#e3cfa4"/><ellipse cx="45" cy="28" rx="2.5" ry="4" fill="#b89a63"/><text x="48" y="18" fill="#e9ecff" font-size="11" font-family="Fredoka, sans-serif" font-weight="600">z</text><text x="54" y="10" fill="#e9ecff" font-size="8" font-family="Fredoka, sans-serif" font-weight="600" opacity=".6">z</text></svg><div><b>Molly and Penny</b><span>Tiptoe past (hold Shift or ↓). Wake one and she chases you, barking.</span></div></div>
           <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="16" width="24" height="34" fill="#b5523b"/><rect x="10" y="16" width="24" height="7" fill="#8a3a29"/><circle cx="22" cy="36" r="5" fill="#ffe2b0"/><circle cx="18" cy="30" r="2" fill="#ffe2b0"/><circle cx="26" cy="30" r="2" fill="#ffe2b0"/><ellipse cx="48" cy="52" rx="12" ry="5" fill="#c7cde8"/><ellipse cx="48" cy="48" rx="8" ry="3" fill="#8a5a2e"/></svg><div><b>Dog food</b><span>Feed a dog that wakes and she stays quiet. Enough for both dogs.</span></div></div>
           <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="14" width="20" height="8" fill="#d0d6f0"/><rect x="26" y="11" width="5" height="14" fill="#8d93b3"/><path d="M31 12l14-6v26l-14-6z" fill="rgba(255,226,140,.45)"/><ellipse cx="14" cy="46" rx="9" ry="5" fill="#f7a8c8"/><ellipse cx="30" cy="48" rx="9" ry="5" fill="#f7a8c8"/><rect x="40" y="40" width="20" height="12" fill="#6b3a1f"/><rect x="40" y="40" width="7" height="12" fill="#c9a227"/></svg><div><b>Pick what to bring</b><span>Things go in dressing gown pockets: Seth has 2, Dylan 1 (he holds his toy dog). Torch, slippers, dog food or chocolate for Mum. Press E.</span></div></div>
-          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="16" y="6" width="32" height="52" rx="6" fill="#151d38" stroke="#3a4782" stroke-width="2"/><circle cx="22" cy="40" r="3" fill="#ff5a6e"/><circle cx="29" cy="40" r="3" fill="#ff5a6e"/><circle cx="36" cy="40" r="3" fill="#2b3766"/><circle cx="43" cy="40" r="3" fill="#2b3766"/><circle cx="32" cy="48" r="3" fill="#2b3766"/><rect x="21" y="16" width="22" height="4" rx="2" fill="#ffd66b"/><rect x="21" y="24" width="16" height="3" rx="1.5" fill="#8d96c4"/></svg><div><b>Five alerts</b><span>Every slip pings Dad's phone. On the fifth, he wakes up.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="16" y="6" width="32" height="52" rx="6" fill="#151d38" stroke="#3a4782" stroke-width="2"/><circle cx="22" cy="40" r="3" fill="#ff5a6e"/><circle cx="29" cy="40" r="3" fill="#ff5a6e"/><circle cx="36" cy="40" r="3" fill="#2b3766"/><circle cx="43" cy="40" r="3" fill="#2b3766"/><circle cx="32" cy="48" r="3" fill="#2b3766"/><rect x="21" y="16" width="22" height="4" rx="2" fill="#ffd66b"/><rect x="21" y="24" width="16" height="3" rx="1.5" fill="#8d96c4"/></svg><div><b>Alerts</b><span>Every slip pings Dad's phone. Too many and he wakes up: 8 on Simple, 5 on Normal, 3 on Hard.</span></div></div>
           <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="24" y="6" width="22" height="30" fill="#111"/><rect x="26" y="8" width="18" height="26" fill="#82d2ff"/><rect x="8" y="44" width="48" height="14" fill="#7a3b6b"/><rect x="4" y="38" width="9" height="20" fill="#7a3b6b"/><rect x="51" y="38" width="9" height="20" fill="#7a3b6b"/></svg><div><b>The snug</b><span>Get both boys to the sofa to win.</span></div></div>
           <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M4 40a14 9 0 0 1 28 0z" fill="#e05a8a"/><rect x="22" y="35" width="13" height="5" fill="#e9ecff"/><rect x="32" y="30" width="3" height="7" fill="#e9ecff"/><path d="M38 58l5-8 6 4 6-6 6 10z" fill="#c85adc"/><rect x="44" y="53" width="2" height="2" fill="#fff"/><rect x="6" y="40" width="52" height="2" fill="#4b3b2d"/><rect x="6" y="58" width="56" height="2" fill="#4b3b2d"/></svg><div><b>Clothes and wrappers</b><span>Sometimes there's mess on the landing and kitchen floors. Jump over it, or thump and crinkle!</span></div></div>
           <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M30 30 62 16v44L30 36z" fill="rgba(255,226,140,.3)"/><rect x="8" y="24" width="20" height="32" fill="#3d5a7a"/><rect x="8" y="40" width="20" height="3" fill="#4f7096"/><circle cx="18" cy="15" r="9" fill="#f0c8a0"/><path d="M9 13a9 9 0 0 1 18 0z" fill="#5a4030"/><rect x="26" y="30" width="7" height="5" fill="#ffe28c"/><rect x="10" y="56" width="6" height="6" fill="#2a2a3a"/><rect x="20" y="56" width="6" height="6" fill="#2a2a3a"/></svg><div><b>Dad</b><span>Now and then he's dozing on the lounge sofa. Only pass the lounge door while his eyes are shut.</span></div></div>
@@ -150,7 +155,7 @@ button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
         <p class="keys"><kbd>←</kbd><kbd>→</kbd> move <kbd>↑</kbd>/<kbd>Space</kbd> jump <kbd>Shift</kbd>/<kbd>↓</kbd> tiptoe <kbd>Tab</kbd> swap <kbd>E</kbd> pick up/put down <kbd>M</kbd> sound</p>
         <button id="start">Start sneaking</button>
         <button id="resume" hidden style="background:var(--panel);color:var(--ink);border:1px solid #3a4782">Continue last game</button>
-        <p class="ver">Version 202611141612</p>
+        <p class="ver">Version 202611141621</p>
       </div>
     </div>
   </div>
@@ -171,7 +176,17 @@ button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
 <script>
 (()=>{
 const HANDKEY=matchMedia('(pointer:coarse)').matches?'✋':'E';
-let W=960;const MAXALERTS=5,MUMSPEED=160,H=540,WORLD=3120,G=1500,TETHER=240,TIPTOE=75,DOGSPEED=200;let tetherMsg=0;
+let W=960;const H=540,WORLD=3120,G=1500,TIPTOE=75;let tetherMsg=0;
+// Difficulty modes, picked at the start of every game. Normal is the original game.
+const MODES={
+  simple:{label:'Simple',blurb:'8 alerts. Sensors look for less time, dogs sleep deeper, no Dad, Mum rarely, no mess on the floor.',
+    alerts:8,senOn:1.6,senCycle:5.2,dad:0,dadLook:1.2,mum:0.15,mumSpeed:130,litter:0,dogR:0.7,dogSpeed:150,cold:20,tether:320},
+  normal:{label:'Normal',blurb:'5 alerts. Anything can happen: Dad on the sofa now and then, Mum sometimes, a bit of mess.',
+    alerts:5,senOn:2.2,senCycle:4.6,dad:0.25,dadLook:1.4,mum:0.4,mumSpeed:160,litter:1,dogR:1,dogSpeed:200,cold:10,tether:240},
+  hard:{label:'Hard',blurb:'3 alerts. Sensors look for longer, light sleepers, Dad and Mum more often, mess everywhere.',
+    alerts:3,senOn:2.8,senCycle:4.6,dad:0.5,dadLook:2,mum:0.7,mumSpeed:185,litter:2,dogR:1.2,dogSpeed:225,cold:7,tether:200},
+};
+let mode=MODES.normal,modeKey='normal';
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
 const dpr=Math.min(window.devicePixelRatio||1,2);
 // fill the stage: world height is fixed at 540, view width follows the window's shape
@@ -230,8 +245,8 @@ function build(){
     {x:2600,ceil:260,floor:500,reach:100,off:0.8,name:'Kitchen motion (snug end)',room:'Kitchen',entity:'kitchen_motion_snug_end'},
   ];
   // half the time Dad is dozing on the lounge sofa; sometimes Mum hears a noise and comes after them
-  dad={awake:Math.random()<0.25,phase:'doze',t:5+Math.random()*5,hinted:false};
-  mum={will:Math.random()<0.4,at:20+Math.random()*40,on:false,done:false,x:0,t:0,shout:0,face:1};
+  dad={awake:Math.random()<mode.dad,phase:'doze',t:5+Math.random()*5,hinted:false};
+  mum={will:Math.random()<mode.mum,at:20+Math.random()*40,on:false,done:false,x:0,t:0,shout:0,face:1};
   // things the boys can carry: Seth has room for 2, Dylan for 1 (his other hand holds his toy dog)
   items=[
     {id:'choc',name:'Chocolate',icon:'🍫',x:160,y:195,tip:'If Mum catches you, give it to her and she goes back to bed.'},
@@ -241,15 +256,15 @@ function build(){
   ].map(i=>Object.assign(i,{holder:null,gone:false}));
   // random mess each game: 0-2 piles of clothes on the landing, 0-2 sweet wrappers in the kitchen
   const pick=(c,n)=>c.sort(()=>Math.random()-0.5).slice(0,n);
-  litter=[...pick([520,650,780],Math.floor(Math.random()*3)).map(x=>({kind:'clothes',x:x-17,w:34,y:230,room:'Main landing',seed:Math.random()})),
-    ...pick([2605,2655],Math.floor(Math.random()*3)).map(x=>({kind:'wrapper',x:x-9,w:18,y:500,room:'Kitchen',seed:Math.random()}))];
+  litter=[...pick([520,650,780],[0,Math.floor(Math.random()*3),2+Math.floor(Math.random()*2)][mode.litter]).map(x=>({kind:'clothes',x:x-17,w:34,y:230,room:'Main landing',seed:Math.random()})),
+    ...pick([2605,2655],[0,Math.floor(Math.random()*3),2][mode.litter]).map(x=>({kind:'wrapper',x:x-9,w:18,y:500,room:'Kitchen',seed:Math.random()}))];
   gowns=[{owner:0,x:248,y:160,col:'#2f4a8a',got:false},{owner:1,x:292,y:160,col:'#2f7a55',got:false}];
   magnets=[{x:310,y:108,got:false},{x:1010,y:120,got:false},{x:1640,y:385,got:false}];
   dogs=[
     {name:'Molly',x:1150,floor:230,r:85,room:'Main landing',col:'#7a5636',ear:'#4e341f'},
     {name:'Penny',x:2780,floor:500,r:70,room:'Snug',col:'#e3cfa4',ear:'#b89a63'},
   ];
-  dogs.forEach(d=>Object.assign(d,{home:d.x,awake:0,barkT:0,woof:0,face:-1,chase:null,eat:0,fed:false}));
+  dogs.forEach(d=>Object.assign(d,{r:d.r*mode.dogR,home:d.x,awake:0,barkT:0,woof:0,face:-1,chase:null,eat:0,fed:false}));
   dogs[0].minX=440;dogs[0].maxX=1195;dogs[1].minX=2720;dogs[1].maxX=2850;
   checkpoints=[{x:70,y:150},{x:460,y:180},{x:1545,y:450},{x:2040,y:450},{x:2745,y:450}];
   kids=[
@@ -298,16 +313,16 @@ let toastT=0;
 function toast(html,ms=2600){$('toastText').innerHTML=html;$('toast').dataset.hide='0';toastT=ms/1000;}
 function hud(){
   const k=kids[state.active];
-  $('who').textContent='Playing: '+k.name;
+  $('who').textContent='Playing: '+k.name+' \u00b7 '+mode.label;
   $('mag').textContent=state.mag;
   $('bags').innerHTML=kids.map(k=>`<span class="bag">${k.name} ${!k.gown?'<span class="nogown">no gown</span>':''}${[...Array(k.gown?k.slots:0)].map((_,i)=>{const it=k.items[i];
     return `<span class="slot ${it?'full':''}" title="${it?it.name:'Empty hand'}">${it?it.icon+(it.uses>1?'<sub>'+it.uses+'</sub>':''):''}</span>`;}).join('')}${k.toy?'<span class="slot full" title="Toy dog">🐶</span>':''}</span>`).join('');
-  $('alerts').innerHTML='Alerts'+[0,1,2,3,4].map(i=>`<span class="${i<state.alerts?'on':''}"></span>`).join('');
+  $('alerts').innerHTML='Alerts'+[...Array(mode.alerts).keys()].map(i=>`<span class="${i<state.alerts?'on':''}"></span>`).join('');
   $('safe').textContent='In the snug: '+kids.filter(k=>k.home).length+'/2';
 }
 function sensorPhase(s){ // returns 'on' | 'warn' | 'off'
-  const p=(state.t+s.off)%4.6;
-  if(p<2.2)return 'on'; if(p>3.9)return 'warn'; return 'off';
+  const p=(state.t+s.off)%mode.senCycle;
+  if(p<mode.senOn)return 'on'; if(p>mode.senCycle-0.7)return 'warn'; return 'off';
 }
 function caught(kid,why,room){
   if(state.freeze>0)return;
@@ -342,7 +357,7 @@ function wakeDog(d,k){
     toast(`${d.name} woke up, but ${h.name} gave her some food. Nom nom. No barking, no alert.`);return;}
   d.awake=5.8;d.chase=k;d.barkT=0;state.alerts++;state.flash={room:d.room,t:1.2};
   toast(`<b>Woof!</b> ${d.name} woke up and is chasing ${k.name}. Run!`);hud();sfx('alarm');
-  if(state.alerts>=MAXALERTS){state.freeze=1.7;state.pending=null;}
+  if(state.alerts>=mode.alerts){state.freeze=1.7;state.pending=null;}
 }
 
 // ---------- update ----------
@@ -353,7 +368,7 @@ function step(dt){
   if(state.freeze>0){
     state.freeze-=dt;
     if(state.freeze<=0){
-      if(state.alerts>=MAXALERTS){gameOver();return;}
+      if(state.alerts>=mode.alerts){gameOver();return;}
       const k=state.pending,cp=checkpoints[k.cp];k.x=cp.x;k.y=cp.y;k.vx=k.vy=0;state.pending=null;
     }
     return;
@@ -369,9 +384,9 @@ function step(dt){
     k.vy=Math.min(k.vy+G*dt,900);
     const px=k.x;
     move(k,k.vx*dt,0);
-    // brothers stick together: the active one can't get more than TETHER px ahead of the other
+    // brothers stick together: the active one can't get more than mode.tether px ahead of the other
     const o=kids[1-i];
-    if(me&&!o.home&&!mum.on&&Math.abs(k.x-o.x)>TETHER&&Math.abs(k.x-o.x)>Math.abs(px-o.x)){
+    if(me&&!o.home&&!mum.on&&Math.abs(k.x-o.x)>mode.tether&&Math.abs(k.x-o.x)>Math.abs(px-o.x)){
       k.x=px;k.vx=0;
       if(tetherMsg<=0){toast(`${k.name} won't go without ${o.name}. Press Tab (⇄) to swap and bring him along.`,2200);tetherMsg=3;sfx('bump');}
     }
@@ -392,7 +407,7 @@ function step(dt){
     magnets.forEach(m=>{if(!m.got&&hit(k,{x:m.x-10,y:m.y-10,w:20,h:20})){m.got=true;state.mag++;sfx('magnet');hud();toast('Picked up a fridge magnet. It will hold a reed switch shut.',1800);}});
     // dressing gowns: each boy needs his own, or he gets cold once he leaves the bedroom
     if(!k.gown&&!k.home&&k.x>440){
-      k.cold=Math.min(1,k.cold+dt/10);
+      k.cold=Math.min(1,k.cold+dt/mode.cold);
       if(k.cold>0.5&&!k.coldWarned){k.coldWarned=true;toast(`<b>${k.name} is getting cold!</b> Go back to the bedroom for his dressing gown.`,2600);}
       if(k.cold>=1&&state.freeze<=0){k.cold=0;k.coldWarned=false;k.cp=0;sfx('chatter');
         caught(k,`<b>Brrr!</b> ${k.name} forgot his dressing gown. He shivered so much his chattering teeth woke the house.`,roomAt(k));}
@@ -428,7 +443,7 @@ function step(dt){
       d.awake-=dt;const k=d.chase;
       if(d.awake<5&&k&&!k.home&&Math.abs(k.y+k.h-d.floor)<60){
         const tx=k.x+k.w/2,dir=Math.sign(tx-d.x);if(dir)d.face=dir;
-        d.x=Math.max(d.minX,Math.min(d.maxX,d.x+dir*DOGSPEED*dt));
+        d.x=Math.max(d.minX,Math.min(d.maxX,d.x+dir*mode.dogSpeed*dt));
         if(Math.abs(tx-d.x)<22&&state.freeze<=0){d.awake=0;caught(k,`<b>${d.name} caught ${k.name}!</b> All that barking woke the house.`,d.room);}
       }
       d.barkT-=dt;if(d.barkT<=0){d.barkT=0.55;d.woof=0.3;sfx('bark');if(!state.flash)state.flash={room:d.room,t:0.25};}
@@ -439,7 +454,7 @@ function step(dt){
     if(!dad.hinted&&kids.some(k=>k.x>1650)){dad.hinted=true;toast('The lounge TV is on. <b>Dad is dozing on the sofa!</b> Only sneak past the lounge door while his eyes are shut.',3400);}
     dad.t-=dt;
     if(dad.phase==='doze'&&dad.t<=0){dad.phase='stir';dad.t=1.3;sfx('hm');}
-    else if(dad.phase==='stir'&&dad.t<=0){dad.phase='look';dad.t=1.4;}
+    else if(dad.phase==='stir'&&dad.t<=0){dad.phase='look';dad.t=mode.dadLook;}
     else if(dad.phase==='look'){
       for(const k of kids){if(k.home)continue;const cx=k.x+k.w/2;
         if(cx>2226&&cx<2360&&k.y+k.h>380&&(Math.abs(k.vx)>1||!k.ground)){dadOver(k);return;}}
@@ -453,7 +468,7 @@ function step(dt){
   if(mum.on){
     mum.t-=dt;mum.shout-=dt;const k=kids[state.active];
     if(mum.shout<=0){mum.shout=1.6;sfx('mum');}
-    const tx=k.x+k.w/2,dir=Math.sign(tx-mum.x);if(dir)mum.face=dir;mum.x+=dir*Math.min(MUMSPEED*dt,Math.abs(tx-mum.x));
+    const tx=k.x+k.w/2,dir=Math.sign(tx-mum.x);if(dir)mum.face=dir;mum.x+=dir*Math.min(mode.mumSpeed*dt,Math.abs(tx-mum.x));
     if(Math.abs(tx-mum.x)<18&&Math.abs(k.y+k.h-groundY(mum.x))<70)mumCatch();
     else if(mum.t<=0||k.home){mum.on=false;mum.done=true;toast('Mum gave up and went back to bed. Phew.',2200);}
   }
@@ -617,8 +632,8 @@ function draw(){
   // tether line between the brothers
   if(!kids[0].home&&!kids[1].home){
     const [a,b]=kids,d=Math.abs(a.x-b.x);
-    if(d>TETHER*0.6){
-      const near=d>TETHER-12;
+    if(d>mode.tether*0.6){
+      const near=d>mode.tether-12;
       ctx.setLineDash([4,6]);ctx.lineWidth=2;ctx.strokeStyle=near?'rgba(255,90,110,.85)':'rgba(255,214,107,.45)';
       ctx.beginPath();ctx.moveTo(a.x+a.w/2,a.y+a.h*0.5);ctx.lineTo(b.x+b.w/2,b.y+b.h*0.5);ctx.stroke();ctx.setLineDash([]);
     }
@@ -754,7 +769,17 @@ function show(html,btn,fn,cls){
   $('overlay').innerHTML=`<div class="card ${cls||''}">${html}<button id="ob">${btn}</button></div>`;
   $('ob').onclick=fn;$('ob').focus();
 }
-function begin(){audioInit();clearSave();$('overlay').hidden=true;build();state.run=true;toast('Stand by your dressing gown and press '+HANDKEY+' to put it on. Its pockets carry things: Seth’s has 2, Dylan’s has 1.',3600);cv.focus();}
+// every new game starts by picking a difficulty
+function begin(){audioInit();
+  let last='normal';try{last=localStorage.getItem('sneaky-kids-mode')||'normal';}catch(e){}
+  show(`<h1>Pick a difficulty</h1><div class="modes">${Object.entries(MODES).map(([k,m])=>
+    `<button class="mode${k===last?' last':''}" data-mode="${k}"><b>${m.label}</b><span>${m.blurb}</span></button>`).join('')}</div>`,'Back',intro);
+  document.querySelectorAll('#overlay .mode').forEach(b=>b.onclick=()=>startGame(b.dataset.mode));
+  const l=document.querySelector('#overlay .mode.last');if(l)l.focus();
+}
+function startGame(key){
+  modeKey=MODES[key]?key:'normal';mode=MODES[modeKey];try{localStorage.setItem('sneaky-kids-mode',modeKey);}catch(e){}
+  audioInit();clearSave();$('overlay').hidden=true;build();state.modeKey=modeKey;state.run=true;toast('Stand by your dressing gown and press '+HANDKEY+' to put it on. Its pockets carry things: Seth’s has 2, Dylan’s has 1.',3600);cv.focus();}
 function dadOver(k){state.run=false;sfx('lose');clearSave();state.flash={room:'Kitchen',t:9};
   show(`<h1>Busted!</h1><p>Dad opened his eyes on the lounge sofa and spotted ${k.name} sneaking past the door. Back to bed, boys.</p>`,'Try again',begin);}
 function mumCatch(){
@@ -766,9 +791,9 @@ function mumCatch(){
   state.active=0;state.flash={room:'Back bedroom',t:1};hud();sfx('lose');
   toast('<b>"GET BACK TO BED!"</b> Mum caught them and marched both boys back to the bedroom.',3200);
 }
-function gameOver(){state.run=false;sfx('lose');clearSave();show('<h1>Dad\'s awake!</h1><p>Five alerts and his phone wouldn\'t stop buzzing. Back to bed, boys.</p>','Try again',begin);}
+function gameOver(){state.run=false;sfx('lose');clearSave();show(`<h1>Dad's awake!</h1><p>${mode.alerts} alerts and his phone wouldn't stop buzzing. Back to bed, boys.</p>`,'Try again',begin);}
 function win(){state.run=false;sfx('win');clearSave();const s=Math.floor(state.t);
-  show(`<h1>Snug secured</h1><p>Both boys are on the sofa and the house never noticed.</p><p class="keys">Time ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')} · Alerts ${state.alerts}/${MAXALERTS}</p>`,'Play again',begin);}
+  show(`<h1>Snug secured</h1><p>Both boys are on the sofa and the house never noticed.</p><p class="keys">Time ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')} · Alerts ${state.alerts}/${mode.alerts} \u00b7 ${mode.label}</p>`,'Play again',begin);}
 const introHTML=$('overlay').querySelector('.card').innerHTML.replace(/<button[\s\S]*<\/button>/,'');
 function intro(){state.run=false;clearSave();build();toastT=0;$('toast').dataset.hide='1';show(introHTML,'Start sneaking',begin,'intro');}
 $('start').onclick=begin;
@@ -786,6 +811,7 @@ function snapshot(){
     doors,magnets,gowns,litter,dogs:dogs.map(d=>({...d,chase:ki(d.chase)})),dad,mum,state:{...state,pending:ki(state.pending)}};
 }
 function restore(s){
+  modeKey=MODES[s.state.modeKey]?s.state.modeKey:'normal';mode=MODES[modeKey];
   build();
   items.forEach((it,i)=>Object.assign(it,s.items[i],{holder:s.items[i].holder>=0?kids[s.items[i].holder]:null}));
   kids.forEach((k,i)=>Object.assign(k,s.kids[i],{items:s.kids[i].items.map(id=>items.find(x=>x.id===id)).filter(Boolean)}));
@@ -795,7 +821,7 @@ function restore(s){
   const pk=s.state.pending>=0?kids[s.state.pending]:null;
   Object.assign(state,s.state,{pending:null,freeze:0,run:true});
   if(pk){const cp=checkpoints[pk.cp];pk.x=cp.x;pk.y=cp.y;pk.vx=pk.vy=0;}
-  if(state.alerts>=MAXALERTS)gameOver();
+  if(state.alerts>=mode.alerts)gameOver();
 }
 function saveGame(){try{const s=snapshot();if(s)localStorage.setItem(SAVE,JSON.stringify(s));}catch(e){}}
 function clearSave(){try{localStorage.removeItem(SAVE);}catch(e){}}
@@ -824,7 +850,7 @@ requestAnimationFrame(loop);
 // ---------- updates: check version.json every minute and reload into a new version ----------
 // GitHub Pages lets browsers cache index.html for up to 10 minutes, so open games could run an
 // old version. scripts/bump-version.sh sets this number and version.json together.
-const GAME_VERSION='202611141612';
+const GAME_VERSION='202611141621';
 async function checkVersion(){
   try{
     const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;
