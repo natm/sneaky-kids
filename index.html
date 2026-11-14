@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Sneaky Kids: help Seth and Dylan sneak down to the snug TV at 2am without waking the house.">
+<style>
+/* what the Claude artifact wrapper used to provide */
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px/1.4 system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Sneaky Kids</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one game screen, HUD strip above, touch pad below on phones. Single deliberate night-time look. */
+:root{
+  --night:#0d1328; --wall:#1a2342; --ink:#e9ecff; --dim:#8d96c4;
+  --moon:#ffd66b; --alarm:#ff5a6e; --safe:#5ee0a8; --panel:#151d38;
+  --display:"Fredoka", "Trebuchet MS", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+html{box-sizing:border-box}
+html,body{overscroll-behavior:none} /* no pull-to-refresh reloading the game */
+.stage{touch-action:none}
+button{touch-action:manipulation}
+#restart.arm{background:var(--alarm)!important;color:#fff!important} /* the phone safe-area padding on :root must fit inside the screen height */
+[hidden]{display:none!important}
+body{background:var(--night);color:var(--ink);font-family:var(--display);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:12px;box-sizing:border-box}
+.wrap{height:100%;display:flex;flex-direction:column;gap:8px;background:var(--night)}
+.wrap:fullscreen{padding:8px;box-sizing:border-box}
+.hud{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-size:15px}
+.hud b{font-weight:600}
+.hud .who{padding:3px 10px;border-radius:999px;background:var(--panel);border:1px solid #2b3766}
+.hud .mono{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--dim)}
+.bags{display:flex;flex-wrap:wrap;gap:4px 12px}
+.bag{display:inline-flex;gap:3px;align-items:center}
+.slot{display:inline-grid;place-items:center;width:24px;height:24px;border:1px dashed #3a4782;border-radius:6px;font-size:14px;line-height:1;position:relative}
+.nogown{font-size:11px;color:var(--dim);border:1px dashed #3a4782;border-radius:6px;padding:2px 6px}
+.slot.full{border-style:solid;background:var(--panel)}
+.slot sub{position:absolute;right:1px;bottom:0;font-size:9px;color:var(--moon)}
+.alerts span{display:inline-block;width:12px;height:12px;border-radius:50%;background:#2b3766;margin-left:4px;vertical-align:-1px}
+.alerts span.on{background:var(--alarm);box-shadow:0 0 8px var(--alarm)}
+.stage{position:relative;width:100%;flex:1;min-height:200px;border-radius:10px;overflow:hidden;border:1px solid #2b3766}
+canvas{display:block;width:100%;height:100%}
+.toast{position:absolute;top:10px;right:10px;max-width:min(320px,80%);background:rgba(21,29,56,.95);border:1px solid #3a4782;border-radius:12px;padding:8px 12px;font-size:13px;line-height:1.35;transition:opacity .25s, transform .25s}
+.toast[data-hide="1"]{opacity:0;transform:translateY(-8px);pointer-events:none}
+.toast .src{font-size:11px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+.toast code{font-family:var(--mono);font-size:12px;color:var(--moon)}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(9,13,30,.82);padding:16px;box-sizing:border-box}
+.card{max-width:520px;text-align:center;display:flex;flex-direction:column;gap:10px}
+.card h1{font-size:clamp(28px,6vw,46px);margin:0;color:var(--moon);letter-spacing:.01em;text-wrap:balance}
+.overlay{overflow:auto;align-items:safe center}
+.card.intro{max-width:820px;width:100%;gap:14px}
+.card .story{max-width:60ch;align-self:center}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;text-align:left}
+.tile{display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid #2b3766;border-radius:12px;padding:8px 12px 8px 8px;min-width:0}
+.tile svg{flex:none;width:56px;height:56px;background:#0d1328;border-radius:8px}
+.tile div{min-width:0}
+.tile b{display:block;color:var(--moon);font-size:15px;font-weight:600}
+.tile span{display:block;font-size:13px;line-height:1.35;color:var(--ink)}
+kbd{font-family:var(--mono);font-size:12px;background:var(--panel);border:1px solid #3a4782;border-bottom-width:2px;border-radius:5px;padding:1px 6px;margin:0 2px;color:var(--ink)}
+.card .keys{line-height:2}
+.card .touch{display:none;color:var(--dim);font-size:13px;line-height:1.6}
+/* phones: compact two-column picture grid, details on tap, touch controls instead of keys */
+@media (max-width:600px), (pointer:coarse) and (max-height:500px){
+  .card.intro{gap:10px}
+  .card .story{font-size:14px}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  .tile{padding:6px 8px 6px 6px;gap:8px;cursor:pointer;align-items:flex-start}
+  .tile svg{width:38px;height:38px}
+  .tile b{font-size:13px;line-height:1.25}
+  .tile span{display:none;font-size:12px;margin-top:2px}
+  .tile.open{grid-column:1/-1}
+  .tile.open span{display:block}
+  .card .keys{display:none}
+  .card .touch{display:block}
+  .overlay{position:fixed;z-index:20;background:rgba(9,13,30,.97);
+    padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+}
+@media (max-width:600px){
+  .wrap .legend{display:none}
+  /* compact one-line HUD so the game gets most of the screen */
+  .wrap .hud{gap:4px 10px;font-size:13px}
+  .wrap .lbl,.wrap #who,.wrap #clock,.wrap #safe,.wrap #fs{display:none}
+  .wrap .hud button{padding:4px 10px!important}
+  .wrap{gap:6px}
+  html body{padding-block:6px}
+  .wrap .slot{width:22px;height:22px}
+  #pad{gap:6px}#pad div{gap:6px}
+  #pad button{width:48px;height:50px;font-size:18px}
+}
+.card p{margin:0;color:var(--ink);line-height:1.45;font-size:clamp(13px,2.4vw,16px)}
+.card .keys{color:var(--dim);font-size:13px}
+button{font-family:var(--display);font-weight:600;font-size:16px;color:#1a1300;background:var(--moon);border:0;border-radius:999px;padding:10px 22px;cursor:pointer;align-self:center}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.pad{display:none;justify-content:space-between;gap:10px;user-select:none;-webkit-user-select:none;touch-action:none}
+.pad div{display:flex;gap:10px}
+.pad button{background:var(--panel);color:var(--ink);border:1px solid #3a4782;width:64px;height:56px;padding:0;font-size:20px;border-radius:14px}
+.pad button.act{background:#2b3766}
+@media (pointer:coarse){.pad{display:flex}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--dim)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hud">
+    <span class="who" id="who">Seth</span>
+    <span>🧲 <b id="mag">0</b> magnets</span>
+    <span class="bags" id="bags"></span>
+    <span class="alerts" id="alerts">Alerts</span>
+    <span class="mono" id="clock">00:00</span>
+    <span class="mono" id="safe">In the snug: 0/2</span>
+    <button id="restart" style="margin-left:auto;padding:6px 16px;font-size:14px" aria-label="Reset">↻<span class="lbl"> Reset</span></button>
+    <button id="fs" style="padding:6px 14px;font-size:14px;background:var(--panel);color:var(--ink);border:1px solid #3a4782" aria-label="Full screen">⛶<span class="lbl"> Full screen</span></button>
+    <button id="mute" style="padding:6px 14px;font-size:14px;background:var(--panel);color:var(--ink);border:1px solid #3a4782" aria-label="Sound on or off">🔊<span class="lbl"> Sound</span></button>
+  </div>
+  <div class="stage">
+    <canvas id="c" width="960" height="540" aria-label="Sneaky Kids game"></canvas>
+    <div class="toast" id="toast" data-hide="1"><div class="src">Home Assistant</div><div id="toastText"></div></div>
+    <div class="overlay" id="overlay">
+      <div class="card intro">
+        <h1>Sneaky Kids</h1>
+        <p class="story">It's 2am at Llwynygorras. Seth and Dylan want to watch TV. Get them both from the back bedroom down to the snug sofa without Home Assistant noticing.</p>
+        <div class="tiles">
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="12" y="28" width="16" height="30" fill="#5aa6ff"/><rect x="12" y="36" width="16" height="2" fill="#bcd9ff"/><rect x="12" y="43" width="16" height="2" fill="#bcd9ff"/><rect x="12" y="50" width="16" height="2" fill="#bcd9ff"/><circle cx="20" cy="20" r="8" fill="#f2c8a0"/><path d="M12 19a8 8 0 0 1 16 0z" fill="#6b4a2b"/><rect x="38" y="36" width="14" height="22" fill="#ff9f45"/><rect x="38" y="43" width="14" height="2" fill="#ffd2a8"/><rect x="38" y="50" width="14" height="2" fill="#ffd2a8"/><circle cx="45" cy="29" r="7" fill="#f2c8a0"/><path d="M38 28a7 7 0 0 1 14 0z" fill="#8a5a2e"/><path d="M28 44h10" stroke="#ffd66b" stroke-width="2" stroke-dasharray="3 3"/><ellipse cx="57" cy="47" rx="4.5" ry="3" fill="#d8c3a5"/><circle cx="60.5" cy="44" r="2.6" fill="#d8c3a5"/><ellipse cx="59.5" cy="42" rx="1.2" ry="2" fill="#8a6a4a"/></svg><div><b>Seth and Dylan</b><span>They stick together, so swap to bring the other along. Dylan never goes anywhere without his toy dog.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="20" cy="10" r="3" fill="#9aa3c9"/><path d="M13 13h14l6 40H7z" fill="#2f4a8a"/><rect x="8" y="32" width="24" height="3" fill="rgba(255,255,255,.3)"/><circle cx="44" cy="10" r="3" fill="#9aa3c9"/><path d="M37 13h14l6 40H31z" fill="#2f7a55"/><rect x="32" y="32" width="24" height="3" fill="rgba(255,255,255,.3)"/><text x="46" y="62" fill="#9cc8ff" font-size="9" font-family="Fredoka, sans-serif" font-weight="700">brrr</text></svg><div><b>Dressing gowns</b><span>Press E by the hook to put one on. The pockets carry your things. Without one a boy gets cold, shivers and wakes the house.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="8" width="22" height="50" fill="#7a5532"/><circle cx="15" cy="34" r="2.5" fill="#d9b26a"/><rect x="32" y="14" width="9" height="15" fill="#e8e8f6"/><circle cx="36.5" cy="21" r="2.5" fill="#5ee0a8"/><path d="M42 50a8 8 0 0 1 16 0" fill="none" stroke="#ff5a6e" stroke-width="5"/><rect x="39.5" y="48" width="5" height="6" fill="#ffd66b"/><rect x="55.5" y="48" width="5" height="6" fill="#ffd66b"/></svg><div><b>Fridge magnets</b><span>Every door has a reed switch. Collect a magnet before you open one.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 10 8 58h48z" fill="rgba(255,90,110,.28)" stroke="#ff5a6e" stroke-dasharray="4 4"/><path d="M21 6h22a11 11 0 0 1-22 0z" fill="#e8e8f6"/><circle cx="32" cy="11" r="3" fill="#ff5a6e"/></svg><div><b>Motion sensors</b><span>They only see you moving. Freeze while the red cone is on.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="40" width="52" height="7" rx="1" fill="#c98a3c"/><path d="M14 30q4-6 8 0t8 0 8 0 8 0 8 0" fill="none" stroke="#c98a3c" stroke-width="2.5"/><path d="M18 22q3-5 6 0t6 0 6 0 6 0" fill="none" stroke="rgba(201,138,60,.6)" stroke-width="2"/></svg><div><b>Creaky boards</b><span>Jump over them. Stand on one and the whole house hears.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="22" cy="48" rx="15" ry="6" fill="#7a5636"/><ellipse cx="36" cy="49" rx="6" ry="5" fill="#7a5636"/><ellipse cx="35" cy="45" rx="2.5" ry="4.5" fill="#4e341f"/><ellipse cx="34" cy="31" rx="13" ry="5" fill="#e3cfa4"/><ellipse cx="46" cy="32" rx="5.5" ry="4.5" fill="#e3cfa4"/><ellipse cx="45" cy="28" rx="2.5" ry="4" fill="#b89a63"/><text x="48" y="18" fill="#e9ecff" font-size="11" font-family="Fredoka, sans-serif" font-weight="600">z</text><text x="54" y="10" fill="#e9ecff" font-size="8" font-family="Fredoka, sans-serif" font-weight="600" opacity=".6">z</text></svg><div><b>Molly and Penny</b><span>Tiptoe past (hold Shift or ↓). Wake one and she chases you, barking.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="10" y="16" width="24" height="34" fill="#b5523b"/><rect x="10" y="16" width="24" height="7" fill="#8a3a29"/><circle cx="22" cy="36" r="5" fill="#ffe2b0"/><circle cx="18" cy="30" r="2" fill="#ffe2b0"/><circle cx="26" cy="30" r="2" fill="#ffe2b0"/><ellipse cx="48" cy="52" rx="12" ry="5" fill="#c7cde8"/><ellipse cx="48" cy="48" rx="8" ry="3" fill="#8a5a2e"/></svg><div><b>Dog food</b><span>Feed a dog that wakes and she stays quiet. Enough for both dogs.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="14" width="20" height="8" fill="#d0d6f0"/><rect x="26" y="11" width="5" height="14" fill="#8d93b3"/><path d="M31 12l14-6v26l-14-6z" fill="rgba(255,226,140,.45)"/><ellipse cx="14" cy="46" rx="9" ry="5" fill="#f7a8c8"/><ellipse cx="30" cy="48" rx="9" ry="5" fill="#f7a8c8"/><rect x="40" y="40" width="20" height="12" fill="#6b3a1f"/><rect x="40" y="40" width="7" height="12" fill="#c9a227"/></svg><div><b>Pick what to bring</b><span>Things go in dressing gown pockets: Seth has 2, Dylan 1 (he holds his toy dog). Torch, slippers, dog food or chocolate for Mum. Press E.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="16" y="6" width="32" height="52" rx="6" fill="#151d38" stroke="#3a4782" stroke-width="2"/><circle cx="22" cy="40" r="3" fill="#ff5a6e"/><circle cx="29" cy="40" r="3" fill="#ff5a6e"/><circle cx="36" cy="40" r="3" fill="#2b3766"/><circle cx="43" cy="40" r="3" fill="#2b3766"/><circle cx="32" cy="48" r="3" fill="#2b3766"/><rect x="21" y="16" width="22" height="4" rx="2" fill="#ffd66b"/><rect x="21" y="24" width="16" height="3" rx="1.5" fill="#8d96c4"/></svg><div><b>Five alerts</b><span>Every slip pings Dad's phone. On the fifth, he wakes up.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="24" y="6" width="22" height="30" fill="#111"/><rect x="26" y="8" width="18" height="26" fill="#82d2ff"/><rect x="8" y="44" width="48" height="14" fill="#7a3b6b"/><rect x="4" y="38" width="9" height="20" fill="#7a3b6b"/><rect x="51" y="38" width="9" height="20" fill="#7a3b6b"/></svg><div><b>The snug</b><span>Get both boys to the sofa to win.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M4 40a14 9 0 0 1 28 0z" fill="#e05a8a"/><rect x="22" y="35" width="13" height="5" fill="#e9ecff"/><rect x="32" y="30" width="3" height="7" fill="#e9ecff"/><path d="M38 58l5-8 6 4 6-6 6 10z" fill="#c85adc"/><rect x="44" y="53" width="2" height="2" fill="#fff"/><rect x="6" y="40" width="52" height="2" fill="#4b3b2d"/><rect x="6" y="58" width="56" height="2" fill="#4b3b2d"/></svg><div><b>Clothes and wrappers</b><span>Sometimes there's mess on the landing and kitchen floors. Jump over it, or thump and crinkle!</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M30 30 62 16v44L30 36z" fill="rgba(255,226,140,.3)"/><rect x="8" y="24" width="20" height="32" fill="#3d5a7a"/><rect x="8" y="40" width="20" height="3" fill="#4f7096"/><circle cx="18" cy="15" r="9" fill="#f0c8a0"/><path d="M9 13a9 9 0 0 1 18 0z" fill="#5a4030"/><rect x="26" y="30" width="7" height="5" fill="#ffe28c"/><rect x="10" y="56" width="6" height="6" fill="#2a2a3a"/><rect x="20" y="56" width="6" height="6" fill="#2a2a3a"/></svg><div><b>Dad</b><span>Now and then he's dozing on the lounge sofa. Only pass the lounge door while his eyes are shut.</span></div></div>
+          <div class="tile"><svg viewBox="0 0 64 64" aria-hidden="true"><rect x="20" y="26" width="20" height="30" fill="#c25c8f"/><rect x="20" y="40" width="20" height="3" fill="#d9779f"/><path d="M38 30l10-12" stroke="#c25c8f" stroke-width="5"/><rect x="20" y="8" width="20" height="16" fill="#3a2418"/><circle cx="30" cy="16" r="8" fill="#f0c8a0"/><path d="M22 14a8 8 0 0 1 16 0z" fill="#3a2418"/><rect x="28" y="20" width="5" height="2" fill="#1a1a2a"/><rect x="22" y="56" width="6" height="6" fill="#2a2a3a"/><rect x="32" y="56" width="6" height="6" fill="#2a2a3a"/><text x="44" y="12" fill="#ff5a6e" font-size="12" font-family="Fredoka, sans-serif" font-weight="700">!!</text></svg><div><b>Mum</b><span>She might hear you and give chase, shouting "Get back to bed!" Outrun her, or it's back to the bedroom.</span></div></div>
+        </div>
+        <p class="touch">◀ ▶ move · ▲ jump · 🤫 hold to tiptoe · ⇄ swap · ✋ pick up<br>Tap a picture to learn more.</p>
+        <p class="keys"><kbd>←</kbd><kbd>→</kbd> move <kbd>↑</kbd>/<kbd>Space</kbd> jump <kbd>Shift</kbd>/<kbd>↓</kbd> tiptoe <kbd>Tab</kbd> swap <kbd>E</kbd> pick up/put down <kbd>M</kbd> sound</p>
+        <button id="start">Start sneaking</button>
+        <button id="resume" hidden style="background:var(--panel);color:var(--ink);border:1px solid #3a4782">Continue last game</button>
+      </div>
+    </div>
+  </div>
+  <div class="pad" id="pad">
+    <div><button data-k="left" aria-label="Left">◀</button><button data-k="right" aria-label="Right">▶</button></div>
+    <div><button data-k="hand" class="act" aria-label="Pick up or put down">✋</button><button data-k="sneak" class="act" aria-label="Tiptoe (hold)">🤫</button><button data-k="swap" class="act" aria-label="Swap brother">⇄</button><button data-k="jump" class="act" aria-label="Jump">▲</button></div>
+  </div>
+  <div class="legend">
+    <span><i style="background:#ff5a6e"></i>Motion sensor looking</span>
+    <span><i style="background:#c98a3c"></i>Creaky board</span>
+    <span><i style="background:#ffd66b"></i>Fridge magnet</span>
+    <span><i style="background:#5ee0a8"></i>Door made safe</span>
+    <span><i style="background:#e3cfa4"></i>Sleeping dog: tiptoe</span>
+    <span><i style="background:#b5523b"></i>Things to carry: press E</span>
+  </div>
+</div>
+
+<script>
+(()=>{
+const HANDKEY=matchMedia('(pointer:coarse)').matches?'✋':'E';
+let W=960;const MAXALERTS=5,MUMSPEED=160,H=540,WORLD=3120,G=1500,TETHER=240,TIPTOE=75,DOGSPEED=200;let tetherMsg=0;
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const dpr=Math.min(window.devicePixelRatio||1,2);
+// fill the stage: world height is fixed at 540, view width follows the window's shape
+function fit(){
+  const r=cv.parentElement.getBoundingClientRect();if(!r.width||!r.height)return;
+  W=Math.round(Math.max(300,Math.min(2000,H*r.width/r.height)));
+  cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+  ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);
+}
+fit();new ResizeObserver(fit).observe(cv.parentElement);
+const $=id=>document.getElementById(id);
+
+// ---------- level ----------
+const R=(x,y,w,h,extra)=>Object.assign({x,y,w,h},extra||{});
+let solids,oneway,doors,creaks,sensors,magnets,items,gowns,litter,checkpoints,kids,dogs,dad,mum,state;
+// is anyone carrying this item? returns the item (with .holder) or undefined
+const has=id=>items.find(i=>i.id===id&&i.holder&&!i.gone);
+// how visible floor hazards are: dim in the dark, clear near whoever carries the torch
+const lit=(x,y)=>{const t=has('torch');if(!t)return 0.12;const h=t.holder,d=Math.hypot(h.x+h.w/2-x,h.y+h.h/2-y);return Math.max(0.12,Math.min(1,1-(d-150)/90));};
+const roomAt=k=>{const cx=k.x+k.w/2,r=rooms.find(r=>cx>=r.x&&cx<r.x2&&k.y<r.floor&&k.y+k.h>r.top);return r?r.name:'';};
+// the floor height along the route: upstairs, the stairs, then downstairs
+const groundY=x=>x<1200?230:x<1520?230+30*(Math.floor((x-1200)/40)+1):500;
+const rooms=[
+  {name:'Back bedroom',x:20,x2:420,top:40,floor:230,col:'#1b2550'},
+  {name:'Main landing',x:436,x2:1200,top:40,floor:230,col:'#18213f'},
+  {name:'Stairs',x:1200,x2:1520,top:40,floor:500,col:'#161e3a'},
+  {name:'Downstairs hallway',x:1520,x2:2000,top:260,floor:500,col:'#1a2244'},
+  {name:'Kitchen',x:2016,x2:2700,top:260,floor:500,col:'#1c2547'},
+  {name:'Snug',x:2716,x2:3100,top:260,floor:500,col:'#22204a'},
+];
+function build(){
+  solids=[
+    R(0,0,1520,40),          // roof over upstairs
+    R(1520,0,1600,260),      // upstairs rooms we don't visit
+    R(0,230,1200,310),       // upstairs floor (and rooms below)
+    R(1200,500,1920,40),     // ground floor
+    R(0,0,20,540),R(3100,0,20,540), // end walls
+    R(420,40,16,90),         // wall above back bedroom door
+    R(2000,260,16,140),R(2700,260,16,140), // walls above kitchen doors
+    R(60,195,160,35,{kind:'bed'}),        // Seth's tractor bed
+    R(2080,420,160,80,{kind:'counter'}),R(2420,420,160,80,{kind:'counter'}),
+    R(2860,455,150,45,{kind:'sofa'}),
+  ];
+  for(let i=0;i<8;i++){const top=230+30*(i+1);solids.push(R(1200+40*i,top,40,540-top,{kind:'step',i}));}
+  oneway=[R(270,128,80,10,{kind:'shelf'}),R(975,140,70,10,{kind:'shelf'}),R(1600,405,80,10,{kind:'shelf'}),R(2312,446,40,10,{kind:'stool'})];
+  doors=[
+    {x:420,y:130,w:16,h:100,open:false,safe:false,entity:'binary_sensor.back_bedroom_door',room:'Back bedroom'},
+    {x:2000,y:400,w:16,h:100,open:false,safe:false,entity:'binary_sensor.kitchen_hallway_door',room:'Kitchen'},
+    {x:2700,y:400,w:16,h:100,open:false,safe:false,entity:'binary_sensor.kitchen_snug_door',room:'Snug'},
+  ];
+  creaks=[R(870,226,80,4,{name:'Main landing'}),R(1360,380,40,4,{name:'Stairs',step:4}),R(2250,496,160,4,{name:'Kitchen'})];
+  sensors=[
+    {x:700,ceil:40,floor:230,reach:120,off:0,name:'Main landing motion'},
+    {x:1800,ceil:260,floor:500,reach:120,off:1.6,name:'Downstairs hallway motion'},
+    {x:2120,ceil:260,floor:500,reach:100,off:3.1,name:'Kitchen motion (hallway end)',room:'Kitchen',entity:'kitchen_motion_hallway_end'},
+    {x:2600,ceil:260,floor:500,reach:100,off:0.8,name:'Kitchen motion (snug end)',room:'Kitchen',entity:'kitchen_motion_snug_end'},
+  ];
+  // half the time Dad is dozing on the lounge sofa; sometimes Mum hears a noise and comes after them
+  dad={awake:Math.random()<0.25,phase:'doze',t:5+Math.random()*5,hinted:false};
+  mum={will:Math.random()<0.4,at:20+Math.random()*40,on:false,done:false,x:0,t:0,shout:0,face:1};
+  // things the boys can carry: Seth has room for 2, Dylan for 1 (his other hand holds his toy dog)
+  items=[
+    {id:'choc',name:'Chocolate',icon:'🍫',x:160,y:195,tip:'If Mum catches you, give it to her and she goes back to bed.'},
+    {id:'torch',name:'Torch',icon:'🔦',x:318,y:230,tip:'It lights up creaky boards and mess on the floor.'},
+    {id:'slippers',name:'Slippers',icon:'🥿',x:352,y:230,tip:'Whoever wears them can step on creaky boards without a sound.'},
+    {id:'food',name:'Dog food',icon:'🦴',x:386,y:230,uses:2,tip:'Feeds Molly or Penny if one wakes up (2 portions).'},
+  ].map(i=>Object.assign(i,{holder:null,gone:false}));
+  // random mess each game: 0-2 piles of clothes on the landing, 0-2 sweet wrappers in the kitchen
+  const pick=(c,n)=>c.sort(()=>Math.random()-0.5).slice(0,n);
+  litter=[...pick([520,650,780],Math.floor(Math.random()*3)).map(x=>({kind:'clothes',x:x-17,w:34,y:230,room:'Main landing',seed:Math.random()})),
+    ...pick([2605,2655],Math.floor(Math.random()*3)).map(x=>({kind:'wrapper',x:x-9,w:18,y:500,room:'Kitchen',seed:Math.random()}))];
+  gowns=[{owner:0,x:248,y:160,col:'#2f4a8a',got:false},{owner:1,x:292,y:160,col:'#2f7a55',got:false}];
+  magnets=[{x:310,y:108,got:false},{x:1010,y:120,got:false},{x:1640,y:385,got:false}];
+  dogs=[
+    {name:'Molly',x:1150,floor:230,r:85,room:'Main landing',col:'#7a5636',ear:'#4e341f'},
+    {name:'Penny',x:2780,floor:500,r:70,room:'Snug',col:'#e3cfa4',ear:'#b89a63'},
+  ];
+  dogs.forEach(d=>Object.assign(d,{home:d.x,awake:0,barkT:0,woof:0,face:-1,chase:null,eat:0,fed:false}));
+  dogs[0].minX=440;dogs[0].maxX=1195;dogs[1].minX=2720;dogs[1].maxX=2850;
+  checkpoints=[{x:70,y:150},{x:460,y:180},{x:1545,y:450},{x:2040,y:450},{x:2745,y:450}];
+  kids=[
+    {name:'Seth',w:22,h:40,speed:230,jump:610,col:'#5aa6ff',hair:'#6b4a2b',gownCol:'#2f4a8a',slots:2},
+    {name:'Dylan',w:20,h:32,speed:240,jump:585,col:'#ff9f45',hair:'#8a5a2e',gownCol:'#2f7a55',toy:true,slots:1},
+  ].map((k,i)=>Object.assign(k,{x:90+i*34,y:150,vx:0,vy:0,ground:false,cp:0,home:false,face:1,gown:false,cold:0,coldWarned:false,items:[]}));
+  kids[1].x=120;
+  state={t:0,run:false,active:0,mag:0,food:0,alerts:0,freeze:0,flash:null,pending:null,cam:0,won:false};
+  hud();
+}
+
+// ---------- input ----------
+const keys={left:false,right:false,sneak:false};let jumpQ=0,swapQ=false,handQ=false;
+const map={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ShiftLeft:'sneak',ShiftRight:'sneak',ArrowDown:'sneak',KeyS:'sneak'};
+addEventListener('keydown',e=>{
+  if(map[e.code]){keys[map[e.code]]=true;e.preventDefault();}
+  if(['ArrowUp','KeyW','Space'].includes(e.code)){if(!e.repeat)jumpQ=0.12;e.preventDefault();}
+  if(e.code==='KeyM'&&!e.repeat)toggleMute();
+  if(['KeyE','KeyF'].includes(e.code)&&!e.repeat){handQ=true;e.preventDefault();}
+  if(['Tab','KeyQ'].includes(e.code)){if(!e.repeat)swapQ=true;e.preventDefault();}
+});
+addEventListener('keyup',e=>{if(map[e.code])keys[map[e.code]]=false;});
+addEventListener('blur',()=>{keys.left=keys.right=keys.sneak=false;});
+document.querySelectorAll('#pad button').forEach(b=>{
+  const k=b.dataset.k;
+  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);
+    if(k==='jump')jumpQ=0.12;else if(k==='swap')swapQ=true;else if(k==='hand')handQ=true;else keys[k]=true;});
+  const up=()=>{if(k==='left'||k==='right'||k==='sneak')keys[k]=false;};
+  b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);
+});
+
+// ---------- helpers ----------
+const hit=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+let toastT=0;
+function toast(html,ms=2600){$('toastText').innerHTML=html;$('toast').dataset.hide='0';toastT=ms/1000;}
+function hud(){
+  const k=kids[state.active];
+  $('who').textContent='Playing: '+k.name;
+  $('mag').textContent=state.mag;
+  $('bags').innerHTML=kids.map(k=>`<span class="bag">${k.name} ${!k.gown?'<span class="nogown">no gown</span>':''}${[...Array(k.gown?k.slots:0)].map((_,i)=>{const it=k.items[i];
+    return `<span class="slot ${it?'full':''}" title="${it?it.name:'Empty hand'}">${it?it.icon+(it.uses>1?'<sub>'+it.uses+'</sub>':''):''}</span>`;}).join('')}${k.toy?'<span class="slot full" title="Toy dog">🐶</span>':''}</span>`).join('');
+  $('alerts').innerHTML='Alerts'+[0,1,2,3,4].map(i=>`<span class="${i<state.alerts?'on':''}"></span>`).join('');
+  $('safe').textContent='In the snug: '+kids.filter(k=>k.home).length+'/2';
+}
+function sensorPhase(s){ // returns 'on' | 'warn' | 'off'
+  const p=(state.t+s.off)%4.6;
+  if(p<2.2)return 'on'; if(p>3.9)return 'warn'; return 'off';
+}
+function caught(kid,why,room){
+  if(state.freeze>0)return;
+  state.alerts++;state.freeze=1.7;state.flash={room,t:1.7};state.pending=kid;
+  toast(why);hud();sfx(why.includes('CREAK')?'creak':'alarm');
+}
+// E / ✋: pick up the item you're standing on, or put down the last thing you picked up
+function hands(k){
+  if(k.home)return;
+  const cx=k.x+k.w/2,fy=k.y+k.h;
+  // dressing gown on its hook: press to put it on (walking past leaves it there)
+  const g=gowns.find(g=>!g.got&&Math.abs(g.x-cx)<16&&k.y<g.y+45&&fy>g.y);
+  if(g){
+    if(kids[g.owner]!==k){sfx('bump');toast(`That's ${kids[g.owner].name}'s dressing gown. It won't fit ${k.name}.`,2000);return;}
+    g.got=true;k.gown=true;k.cold=0;sfx('magnet');hud();
+    toast(`${k.name} put on his dressing gown. Nice and warm, with ${k.slots===1?'a pocket':k.slots+' pockets'} for carrying things.`,2400);return;
+  }
+  const it=items.find(i=>!i.holder&&!i.gone&&Math.abs(i.x-cx)<18&&Math.abs(i.y-fy)<34);
+  if(it){
+    if(!k.gown){sfx('bump');toast(`${k.name} has nowhere to put it. His dressing gown has the pockets, so put that on first.`,2600);return;}
+    if(k.items.length>=k.slots){sfx('bump');toast(`${k.name}'s pockets are full${k.toy?' (he only has one, his other hand holds his toy dog)':''}. Step away from the item and press E to put something down.`,2800);return;}
+    it.holder=k;k.items.push(it);sfx('magnet');hud();toast(`${k.name} picked up the ${it.name.toLowerCase()}. ${it.tip}`,2800);return;
+  }
+  if(k.items.length){const d=k.items.pop();d.holder=null;d.x=cx;d.y=k.ground?fy:groundY(cx);sfx('swap');hud();toast(`${k.name} put down the ${d.name.toLowerCase()}.`,1600);return;}
+  toast('Nothing to pick up here. Stand on an item and press E (✋ on a phone).',2000);
+}
+function wakeDog(d,k){
+  if(state.freeze>0)return;
+  const bag=has('food');
+  if(bag){const h=bag.holder;bag.uses--;if(bag.uses<=0){bag.gone=true;h.items=h.items.filter(i=>i!==bag);}
+    d.eat=3.5;d.fed=true;d.face=1;hud();sfx('munch');
+    toast(`${d.name} woke up, but ${h.name} gave her some food. Nom nom. No barking, no alert.`);return;}
+  d.awake=5.8;d.chase=k;d.barkT=0;state.alerts++;state.flash={room:d.room,t:1.2};
+  toast(`<b>Woof!</b> ${d.name} woke up and is chasing ${k.name}. Run!`);hud();sfx('alarm');
+  if(state.alerts>=MAXALERTS){state.freeze=1.7;state.pending=null;}
+}
+
+// ---------- update ----------
+function step(dt){
+  state.t+=dt;
+  if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').dataset.hide='1';}
+  if(state.flash){state.flash.t-=dt;if(state.flash.t<=0)state.flash=null;}
+  if(state.freeze>0){
+    state.freeze-=dt;
+    if(state.freeze<=0){
+      if(state.alerts>=MAXALERTS){gameOver();return;}
+      const k=state.pending,cp=checkpoints[k.cp];k.x=cp.x;k.y=cp.y;k.vx=k.vy=0;state.pending=null;
+    }
+    return;
+  }
+  if(swapQ){swapQ=false;const o=1-state.active;if(!kids[o].home){state.active=o;hud();sfx('swap');}}
+  if(handQ){handQ=false;hands(kids[state.active]);}
+  kids.forEach((k,i)=>{
+    const me=i===state.active&&!k.home;
+    let dir=0;if(me){dir=(keys.right?1:0)-(keys.left?1:0);}
+    const tip=me&&keys.sneak;
+    k.vx=dir*(tip?TIPTOE:k.speed);if(dir)k.face=dir;k.tip=tip;
+    if(me&&jumpQ>0&&k.ground){k.vy=-k.jump;k.ground=false;jumpQ=0;sfx('jump');}
+    k.vy=Math.min(k.vy+G*dt,900);
+    const px=k.x;
+    move(k,k.vx*dt,0);
+    // brothers stick together: the active one can't get more than TETHER px ahead of the other
+    const o=kids[1-i];
+    if(me&&!o.home&&!mum.on&&Math.abs(k.x-o.x)>TETHER&&Math.abs(k.x-o.x)>Math.abs(px-o.x)){
+      k.x=px;k.vx=0;
+      if(tetherMsg<=0){toast(`${k.name} won't go without ${o.name}. Press Tab (⇄) to swap and bring him along.`,2200);tetherMsg=3;sfx('bump');}
+    }
+    const wasGround=k.ground;k.ground=false;
+    const fallV=k.vy;
+    move(k,0,k.vy*dt);
+    const landed=k.ground&&!wasGround&&fallV>350;
+    if(landed)sfx('land');
+    // sleeping dogs: running or a thumping landing nearby wakes them; tiptoeing is fine
+    dogs.forEach(d=>{
+      const cx=k.x+k.w/2;
+      if(!d.fed&&d.awake<=0&&Math.abs(d.x-d.home)<2&&Math.abs(cx-d.x)<d.r&&Math.abs(k.y+k.h-d.floor)<60&&(Math.abs(k.vx)>TIPTOE+1||landed))
+        wakeDog(d,k);
+    });
+    // checkpoints
+    checkpoints.forEach((c,ci)=>{if(ci>k.cp&&k.x>c.x-10&&k.ground&&Math.abs((k.y+k.h)-(c.y+40))<120)k.cp=ci;});
+    // magnets
+    magnets.forEach(m=>{if(!m.got&&hit(k,{x:m.x-10,y:m.y-10,w:20,h:20})){m.got=true;state.mag++;sfx('magnet');hud();toast('Picked up a fridge magnet. It will hold a reed switch shut.',1800);}});
+    // dressing gowns: each boy needs his own, or he gets cold once he leaves the bedroom
+    if(!k.gown&&!k.home&&k.x>440){
+      k.cold=Math.min(1,k.cold+dt/10);
+      if(k.cold>0.5&&!k.coldWarned){k.coldWarned=true;toast(`<b>${k.name} is getting cold!</b> Go back to the bedroom for his dressing gown.`,2600);}
+      if(k.cold>=1&&state.freeze<=0){k.cold=0;k.coldWarned=false;k.cp=0;sfx('chatter');
+        caught(k,`<b>Brrr!</b> ${k.name} forgot his dressing gown. He shivered so much his chattering teeth woke the house.`,roomAt(k));}
+    }else if(k.cold>0)k.cold=Math.max(0,k.cold-dt/4);
+    // clothes and wrappers on the floor: touching them makes a noise
+    if(k.ground)for(const l of litter){if(k.x+k.w>l.x+2&&k.x<l.x+l.w-2&&Math.abs(k.y+k.h-l.y)<3){
+      if(l.kind==='clothes'){sfx('thud');caught(k,`<b>Thump!</b> ${k.name} tripped over clothes on the landing floor. Jump over them!`,l.room);}
+      else{sfx('crinkle');caught(k,`<b>Crinkle!</b> ${k.name} stepped on a sweet wrapper in the kitchen. Jump over them!`,l.room);}
+      break;}}
+    // creaky boards
+    const slip=has('slippers');
+    if(k.ground&&!(slip&&slip.holder===k))creaks.forEach(c=>{if(k.x+k.w>c.x+3&&k.x<c.x+c.w-3&&Math.abs(k.y+k.h-c.y-(c.step?0:4))<6)
+      caught(k,`<b>CREAK!</b> ${k.name} stood on a creaky board ${c.name==='Kitchen'?'in':'on'} the ${c.name.toLowerCase()}.`,c.name);});
+    // motion sensors
+    const moving=Math.abs(k.vx)>1||!k.ground;
+    sensors.forEach(s=>{
+      const cx=k.x+k.w/2;
+      if(sensorPhase(s)==='on'&&moving&&Math.abs(cx-s.x)<s.reach&&k.y+k.h>s.ceil&&k.y<s.floor)
+        caught(k,`<b>${s.name}</b> detected → lights on.<br><code>${s.entity||s.name.toLowerCase().replace(/ /g,'_')}: on</code>`,s.room||s.name.replace(' motion',''));
+    });
+    // snug
+    if(!k.home&&k.x+k.w>=2856&&k.y>300&&k.ground){
+      k.home=true;hud();
+      if(kids.every(q=>q.home)){win();}
+      else{toast(`${k.name} made it to the snug! Now bring his brother.`);state.active=1-i;hud();}
+    }
+  });
+  // awake dogs chase the brother who woke them, barking; catching him is another alert
+  dogs.forEach(d=>{
+    if(d.woof>0)d.woof-=dt;
+    if(d.eat>0){d.eat-=dt;return;}
+    if(d.awake>0){
+      d.awake-=dt;const k=d.chase;
+      if(d.awake<5&&k&&!k.home&&Math.abs(k.y+k.h-d.floor)<60){
+        const tx=k.x+k.w/2,dir=Math.sign(tx-d.x);if(dir)d.face=dir;
+        d.x=Math.max(d.minX,Math.min(d.maxX,d.x+dir*DOGSPEED*dt));
+        if(Math.abs(tx-d.x)<22&&state.freeze<=0){d.awake=0;caught(k,`<b>${d.name} caught ${k.name}!</b> All that barking woke the house.`,d.room);}
+      }
+      d.barkT-=dt;if(d.barkT<=0){d.barkT=0.55;d.woof=0.3;sfx('bark');if(!state.flash)state.flash={room:d.room,t:0.25};}
+    }else if(Math.abs(d.x-d.home)>=2){const dir=Math.sign(d.home-d.x);d.face=dir;d.x+=dir*Math.min(90*dt,Math.abs(d.home-d.x));}
+  });
+  // Dad on the lounge sofa: dozes, stirs, then looks out of the door
+  if(dad.awake){
+    if(!dad.hinted&&kids.some(k=>k.x>1650)){dad.hinted=true;toast('The lounge TV is on. <b>Dad is dozing on the sofa!</b> Only sneak past the lounge door while his eyes are shut.',3400);}
+    dad.t-=dt;
+    if(dad.phase==='doze'&&dad.t<=0){dad.phase='stir';dad.t=1.3;sfx('hm');}
+    else if(dad.phase==='stir'&&dad.t<=0){dad.phase='look';dad.t=1.4;}
+    else if(dad.phase==='look'){
+      for(const k of kids){if(k.home)continue;const cx=k.x+k.w/2;
+        if(cx>2226&&cx<2360&&k.y+k.h>380&&(Math.abs(k.vx)>1||!k.ground)){dadOver(k);return;}}
+      if(dad.t<=0){dad.phase='doze';dad.t=6+Math.random()*5;}
+    }
+  }
+  // Mum: once, at a random moment, she chases the boy you're playing
+  if(mum.will&&!mum.done&&!mum.on&&state.t>mum.at&&kids.some(k=>!k.home)){
+    const k=kids[state.active];mum.on=true;mum.t=7;mum.x=Math.max(30,k.x-420);mum.shout=0;
+    toast('<b>Mum heard something!</b> Run! (No need to wait for your brother.)',2400);}
+  if(mum.on){
+    mum.t-=dt;mum.shout-=dt;const k=kids[state.active];
+    if(mum.shout<=0){mum.shout=1.6;sfx('mum');}
+    const tx=k.x+k.w/2,dir=Math.sign(tx-mum.x);if(dir)mum.face=dir;mum.x+=dir*Math.min(MUMSPEED*dt,Math.abs(tx-mum.x));
+    if(Math.abs(tx-mum.x)<18&&Math.abs(k.y+k.h-groundY(mum.x))<70)mumCatch();
+    else if(mum.t<=0||k.home){mum.on=false;mum.done=true;toast('Mum gave up and went back to bed. Phew.',2200);}
+  }
+  if(jumpQ>0)jumpQ-=dt;
+  if(tetherMsg>0)tetherMsg-=dt;
+  const a=kids[state.active];
+  const target=Math.max(0,Math.min(WORLD-W,a.x-W*0.42));
+  state.cam+=(target-state.cam)*Math.min(1,dt*6);
+}
+function move(k,dx,dy){
+  k.x+=dx;k.y+=dy;
+  const blockers=solids.concat(doors.filter(d=>!d.open));
+  for(const s of blockers){
+    if(!hit(k,s))continue;
+    if(s.entity!==undefined&&dx!==0){ // walked into a door
+      if(state.mag>0){state.mag--;s.open=true;s.safe=true;hud();sfx('door');toast(`Magnet on the reed switch. Door eased open.<br><code>${s.entity}: off</code>`);continue;}
+      s.open=true;caught(k,`<b>Door opened!</b><br><code>${s.entity}: on</code><br>Find a fridge magnet first.`,s.room);continue;
+    }
+    if(dx>0)k.x=s.x-k.w;else if(dx<0)k.x=s.x+s.w;
+    if(dy>0){k.y=s.y-k.h;k.vy=0;k.ground=true;}else if(dy<0){k.y=s.y+s.h;k.vy=0;}
+  }
+  if(dy>0)for(const p of oneway){
+    if(k.x+k.w>p.x&&k.x<p.x+p.w&&k.y+k.h>=p.y&&k.y+k.h-dy<=p.y+1){k.y=p.y-k.h;k.vy=0;k.ground=true;}
+  }
+}
+
+// ---------- draw ----------
+function draw(){
+  ctx.save();ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0a0f22';ctx.fillRect(0,0,W,H);
+  ctx.translate(-Math.round(state.cam),0);
+  // rooms
+  rooms.forEach(r=>{
+    const lit=state.flash&&state.flash.room===r.name&&Math.floor(state.flash.t*6)%2===0;
+    ctx.fillStyle=lit?'#fff2b0':r.col;ctx.fillRect(r.x,r.top,r.x2-r.x,r.floor-r.top);
+    ctx.fillStyle=lit?'#6b5a10':'rgba(141,150,196,.35)';
+    ctx.font='600 15px Fredoka, sans-serif';ctx.fillText(r.name.toUpperCase(),r.x+14,r.top+22);
+  });
+  // lounge doorway on the kitchen's back wall, and the fridge
+  {const fl=0.6+0.4*Math.sin(state.t*9)*Math.sin(state.t*2.3);
+   ctx.fillStyle='#0b0f22';ctx.fillRect(2240,392,100,108);
+   if(dad.awake){ctx.fillStyle=`rgba(140,190,255,${0.22*fl+0.1})`;ctx.fillRect(2244,396,92,104);
+     ctx.fillStyle='#4a3a5a';ctx.fillRect(2252,462,76,30);ctx.fillRect(2248,450,10,42);ctx.fillRect(2322,450,10,42);
+     const look=dad.phase==='look',hx=2290;
+     ctx.fillStyle='#3d5a7a';ctx.fillRect(hx-13,436,26,34);
+     ctx.fillStyle='#f0c8a0';ctx.beginPath();ctx.arc(hx,424,11,0,7);ctx.fill();
+     ctx.fillStyle='#5a4030';ctx.beginPath();ctx.arc(hx,420,11,Math.PI,0);ctx.fill();
+     ctx.fillStyle='#1a1a2a';
+     if(look){ctx.fillRect(hx-5,424,3,3);ctx.fillRect(hx+3,424,3,3);}else{ctx.fillRect(hx-6,425,4,1.5);ctx.fillRect(hx+2,425,4,1.5);}
+     ctx.font='700 13px Fredoka, sans-serif';
+     if(dad.phase==='doze'){const z=(state.t*0.7)%1;ctx.globalAlpha=1-z;ctx.fillStyle='#e9ecff';ctx.fillText('z',hx+14+z*8,410-z*16);ctx.globalAlpha=1;}
+     if(dad.phase==='stir'){ctx.fillStyle='#ffd66b';ctx.fillText('hm?',hx+12,408);}
+     if(look){ctx.fillStyle='#ff5a6e';ctx.fillText('?!',hx+12,408);
+       ctx.fillStyle='rgba(255,226,140,.14)';ctx.beginPath();ctx.moveTo(2240,392);ctx.lineTo(2340,392);ctx.lineTo(2362,500);ctx.lineTo(2222,500);ctx.closePath();ctx.fill();}
+   }
+   ctx.strokeStyle='#5a3f26';ctx.lineWidth=4;ctx.strokeRect(2240,392,100,108);
+   ctx.fillStyle='rgba(141,150,196,.7)';ctx.font='600 10px Fredoka, sans-serif';ctx.fillText(dad.awake?'LOUNGE · DAD':'LOUNGE',2256,386);
+   ctx.fillStyle='#b9bfdc';ctx.fillRect(2595,372,62,128);ctx.fillStyle='#8d93b3';ctx.fillRect(2595,420,62,2);ctx.fillRect(2648,384,3,26);ctx.fillRect(2648,430,3,40);}
+  // windows with moon
+  [[150,70],[640,70],[2150,290]].forEach(([x,y])=>{ctx.fillStyle='#0b1636';ctx.fillRect(x,y,70,50);ctx.fillStyle='#ffd66b';ctx.beginPath();ctx.arc(x+50,y+16,8,0,7);ctx.fill();ctx.strokeStyle='#38457a';ctx.lineWidth=3;ctx.strokeRect(x,y,70,50);ctx.beginPath();ctx.moveTo(x+35,y);ctx.lineTo(x+35,y+50);ctx.stroke();});
+  // snug TV
+  const glow=0.6+0.4*Math.sin(state.t*3);
+  ctx.fillStyle=`rgba(120,200,255,${0.12*glow})`;ctx.fillRect(2760,280,300,170);
+  ctx.fillStyle='#111';ctx.fillRect(2905,300,60,100);ctx.fillStyle=`rgba(130,210,255,${0.5+0.3*glow})`;ctx.fillRect(2909,304,52,92);
+  // solids
+  solids.forEach(s=>{
+    if(s.kind==='bed'){ctx.fillStyle='#3c8c3a';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle='#1d1d1d';ctx.beginPath();ctx.arc(s.x+30,s.y+s.h,16,0,7);ctx.arc(s.x+s.w-24,s.y+s.h-2,11,0,7);ctx.fill();ctx.fillStyle='#e8e8f6';ctx.fillRect(s.x+10,s.y-6,s.w-20,8);return;}
+    if(s.kind==='counter'){ctx.fillStyle='#3a4366';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle='#9aa3c9';ctx.fillRect(s.x-4,s.y,s.w+8,6);ctx.fillStyle='#2a3150';for(let i=0;i<4;i++)ctx.fillRect(s.x+8+i*38,s.y+16,30,54);return;}
+    if(s.kind==='sofa'){ctx.fillStyle='#7a3b6b';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillRect(s.x-10,s.y-20,20,s.h+20);ctx.fillRect(s.x+s.w-10,s.y-20,20,s.h+20);return;}
+    if(s.kind==='step'){ctx.fillStyle='#4a3a2c';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle='#6a523c';ctx.fillRect(s.x,s.y,s.w,5);return;}
+    ctx.fillStyle='#0f1530';ctx.fillRect(s.x,s.y,s.w,s.h);
+  });
+  // floor tops
+  ctx.fillStyle='#4b3b2d';ctx.fillRect(20,226,1180,4);ctx.fillRect(1520,496,1580,4);
+  creaks.forEach(c=>{ctx.globalAlpha=lit(c.x+c.w/2,c.y);ctx.fillStyle='#c98a3c';ctx.fillRect(c.x,c.y,c.w,4);ctx.fillStyle='rgba(201,138,60,.8)';ctx.font='600 11px Fredoka, sans-serif';ctx.fillText('creak',c.x+c.w/2-14,c.y-6);ctx.globalAlpha=1;});
+  oneway.forEach(p=>{ctx.fillStyle=p.kind==='stool'?'#8c6a46':'#6a5a8a';ctx.fillRect(p.x,p.y,p.w,6);if(p.kind==='stool'){ctx.fillRect(p.x+4,p.y,4,500-p.y);ctx.fillRect(p.x+p.w-8,p.y,4,500-p.y);}});
+  // doors
+  doors.forEach(d=>{
+    if(d.open){ctx.fillStyle='#5a3f26';ctx.fillRect(d.x+2,d.y,4,d.h);}
+    else{ctx.fillStyle='#7a5532';ctx.fillRect(d.x,d.y,d.w,d.h);ctx.fillStyle='#d9b26a';ctx.beginPath();ctx.arc(d.x+4,d.y+d.h*0.55,2.5,0,7);ctx.fill();}
+    ctx.fillStyle='#e8e8f6';ctx.fillRect(d.x+d.w,d.y+6,8,14);
+    ctx.fillStyle=d.safe?'#5ee0a8':(d.open?'#ff5a6e':'#ffd66b');ctx.beginPath();ctx.arc(d.x+d.w+4,d.y+13,2.5,0,7);ctx.fill();
+  });
+  // sensors
+  sensors.forEach(s=>{
+    const ph=sensorPhase(s);
+    const show=ph==='on'||(ph==='warn'&&Math.floor(state.t*8)%2===0);
+    ctx.beginPath();ctx.moveTo(s.x,s.ceil+10);ctx.lineTo(s.x-s.reach,s.floor);ctx.lineTo(s.x+s.reach,s.floor);ctx.closePath();
+    if(show){ctx.fillStyle=ph==='on'?'rgba(255,90,110,.22)':'rgba(255,90,110,.12)';ctx.fill();}
+    ctx.setLineDash([6,6]);ctx.strokeStyle=show?'rgba(255,90,110,.7)':'rgba(141,150,196,.25)';ctx.lineWidth=1.5;ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#e8e8f6';ctx.beginPath();ctx.arc(s.x,s.ceil,11,0,Math.PI);ctx.fill();
+    ctx.fillStyle=ph==='on'?'#ff5a6e':'#4a5272';ctx.beginPath();ctx.arc(s.x,s.ceil+6,3,0,7);ctx.fill();
+  });
+  // dogs
+  dogs.forEach(d=>{
+    if(d.eat>0){drawEatingDog(d);return;}
+    if(d.awake>0||Math.abs(d.x-d.home)>=2){drawAwakeDog(d);return;}
+    const near=!d.fed&&kids.some(k=>!k.home&&Math.abs(k.x+k.w/2-d.x)<d.r&&Math.abs(k.y+k.h-d.floor)<60);
+    ctx.fillStyle=near?'rgba(255,214,107,.16)':'rgba(141,150,196,.07)';
+    ctx.beginPath();ctx.ellipse(d.x,d.floor,d.r,14,0,Math.PI,0);ctx.fill();
+    const br=1+Math.sin(state.t*2)*0.04;
+    ctx.fillStyle=d.col;ctx.beginPath();ctx.ellipse(d.x,d.floor-11,28,11*br,0,0,7);ctx.fill();
+    ctx.beginPath();ctx.ellipse(d.x+26,d.floor-9,11,9,0,0,7);ctx.fill();
+    ctx.fillStyle=d.ear;ctx.beginPath();ctx.ellipse(d.x+24,d.floor-15,5,8,-0.5,0,7);ctx.fill();
+    ctx.strokeStyle=d.col;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(d.x-26,d.floor-8);ctx.quadraticCurveTo(d.x-40,d.floor-4,d.x-34,d.floor-2);ctx.stroke();
+    ctx.strokeStyle='#1a1a2a';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(d.x+28,d.floor-10);ctx.lineTo(d.x+33,d.floor-10);ctx.stroke();
+    ctx.fillStyle='rgba(233,236,255,.75)';ctx.font='600 13px Fredoka, sans-serif';
+    const z=(state.t*0.8+d.x)%1;ctx.globalAlpha=1-z;ctx.fillText('z',d.x+34+z*10,d.floor-24-z*22);ctx.globalAlpha=1;
+    ctx.fillStyle='rgba(141,150,196,.8)';ctx.font='600 11px Fredoka, sans-serif';ctx.fillText(d.fed?d.name+' ♥ full':d.name,d.x-14,d.floor-28);
+  });
+  // clothes and wrappers
+  litter.forEach(l=>{ctx.globalAlpha=lit(l.x+l.w/2,l.y);
+    if(l.kind==='clothes'){const c=['#e05a8a','#5ad1c8','#f2d14a'][Math.floor(l.seed*3)];
+      ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(l.x+l.w/2,l.y,l.w/2,8,0,Math.PI,0);ctx.fill();
+      ctx.fillStyle='rgba(0,0,0,.15)';ctx.fillRect(l.x+l.w/2-1,l.y-7,2,7);
+      ctx.fillStyle='#e9ecff';ctx.fillRect(l.x+l.w-10,l.y-4,12,4);ctx.fillRect(l.x+l.w-1,l.y-8,3,6);
+      ctx.fillStyle='rgba(233,236,255,.6)';ctx.font='600 10px Fredoka, sans-serif';ctx.fillText('clothes',l.x+1,l.y-14);}
+    else{const g=0.6+0.4*Math.sin(state.t*5+l.seed*9);
+      ctx.fillStyle=`rgba(200,90,220,${g})`;ctx.beginPath();ctx.moveTo(l.x,l.y);ctx.lineTo(l.x+4,l.y-6);ctx.lineTo(l.x+9,l.y-3);ctx.lineTo(l.x+14,l.y-7);ctx.lineTo(l.x+18,l.y);ctx.closePath();ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(l.x+5,l.y-4,2,2);ctx.fillRect(l.x+12,l.y-5,2,2);
+      ctx.fillStyle='rgba(233,236,255,.6)';ctx.font='600 10px Fredoka, sans-serif';ctx.fillText('wrapper',l.x-9,l.y-12);}
+    ctx.globalAlpha=1;
+  });
+  // dressing gowns on their hooks
+  gowns.forEach(g=>{if(g.got)return;
+    ctx.fillStyle='#9aa3c9';ctx.beginPath();ctx.arc(g.x,g.y-2,3,0,7);ctx.fill();
+    ctx.fillStyle=g.col;ctx.beginPath();ctx.moveTo(g.x-7,g.y);ctx.lineTo(g.x+7,g.y);ctx.lineTo(g.x+11,g.y+40);ctx.lineTo(g.x-11,g.y+40);ctx.closePath();ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.25)';ctx.fillRect(g.x-10,g.y+20,20,3);
+    ctx.fillStyle='rgba(233,236,255,.8)';ctx.font='600 10px Fredoka, sans-serif';const n=kids[g.owner].name+"'s";ctx.fillText(n,g.x-ctx.measureText(n).width/2,g.y-9);
+    const o=kids[g.owner];if(!o.home&&Math.abs(o.x+o.w/2-g.x)<16){ctx.fillStyle='#ffd66b';ctx.font='700 10px Fredoka, sans-serif';const m='press '+HANDKEY;ctx.fillText(m,g.x-ctx.measureText(m).width/2,g.y-21);}});
+  // things to carry, lying on the floor
+  items.forEach(f=>{if(f.holder||f.gone)return;
+    const near=kids.some(k=>!k.home&&Math.abs(k.x+k.w/2-f.x)<18&&Math.abs(k.y+k.h-f.y)<34),top=f.id==='food'?30:14;
+    if(f.id==='food'){ctx.fillStyle='#b5523b';ctx.fillRect(f.x-9,f.y-24,18,24);ctx.fillStyle='#8a3a29';ctx.fillRect(f.x-9,f.y-24,18,5);ctx.fillStyle='#ffe2b0';ctx.beginPath();ctx.arc(f.x,f.y-10,4,0,7);ctx.fill();}
+    else if(f.id==='torch'){ctx.fillStyle='#d0d6f0';ctx.fillRect(f.x-9,f.y-6,16,6);ctx.fillStyle='#8d93b3';ctx.fillRect(f.x+7,f.y-8,4,8);ctx.fillStyle='#ffe28c';ctx.fillRect(f.x+11,f.y-7,2,6);}
+    else if(f.id==='slippers'){ctx.fillStyle='#f7a8c8';ctx.beginPath();ctx.ellipse(f.x-5,f.y-3,6,3.5,0,0,7);ctx.fill();ctx.beginPath();ctx.ellipse(f.x+6,f.y-3,6,3.5,0,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(f.x-6,f.y-6,3,2);ctx.fillRect(f.x+5,f.y-6,3,2);}
+    else if(f.id==='choc'){ctx.fillStyle='#6b3a1f';ctx.fillRect(f.x-10,f.y-8,20,8);ctx.fillStyle='#c9a227';ctx.fillRect(f.x-10,f.y-8,7,8);}
+    ctx.fillStyle=near?'#ffd66b':'rgba(233,236,255,.75)';ctx.font='600 10px Fredoka, sans-serif';const n=f.name.toLowerCase();ctx.fillText(n,f.x-ctx.measureText(n).width/2,f.y-top);
+    if(near){ctx.font='700 10px Fredoka, sans-serif';const m='press '+HANDKEY;ctx.fillText(m,f.x-ctx.measureText(m).width/2,f.y-top-12);}
+  });
+  // magnets
+  magnets.forEach(m=>{if(m.got)return;const b=Math.sin(state.t*4+m.x)*3;
+    ctx.lineWidth=5;ctx.strokeStyle='#ff5a6e';ctx.beginPath();ctx.arc(m.x,m.y+b,8,Math.PI,0,true);ctx.stroke();
+    ctx.fillStyle='#ffd66b';ctx.fillRect(m.x-10.5,m.y+b-6,5,6);ctx.fillRect(m.x+5.5,m.y+b-6,5,6);});
+  // Mum in her dressing gown
+  if(mum.on){
+    const x=mum.x,y=groundY(x),f=mum.face||1,wave=Math.sin(state.t*12)*5;
+    ctx.fillStyle='#c25c8f';ctx.fillRect(x-13,y-66,26,58);ctx.fillStyle='#d9779f';ctx.fillRect(x-13,y-40,26,4);
+    ctx.fillStyle='#2a2a3a';ctx.fillRect(x-10,y-8,7,8);ctx.fillRect(x+3,y-8,7,8);
+    ctx.strokeStyle='#c25c8f';ctx.lineWidth=6;ctx.beginPath();ctx.moveTo(x+f*10,y-58);ctx.lineTo(x+f*22,y-82+wave);ctx.stroke();
+    ctx.fillStyle='#3a2418';ctx.fillRect(x-13,y-84,26,20);
+    ctx.fillStyle='#f0c8a0';ctx.beginPath();ctx.arc(x,y-78,10,0,7);ctx.fill();
+    ctx.fillStyle='#3a2418';ctx.beginPath();ctx.arc(x,y-81,11,Math.PI,0);ctx.fill();
+    ctx.fillStyle='#1a1a2a';ctx.fillRect(x+f*4-1,y-79,2,2);ctx.fillRect(x+f*3-3,y-72,6,2);
+    ctx.fillStyle='#ffd66b';ctx.font='700 12px Fredoka, sans-serif';ctx.fillText('Mum',x-12,y-96);
+    if(mum.shout>0.7){ctx.fillStyle='#ff5a6e';ctx.font='700 16px Fredoka, sans-serif';const s='GET BACK TO BED!';ctx.fillText(s,x-ctx.measureText(s).width/2,y-114);}
+  }
+  // torch light around whoever carries it
+  {const t=has('torch');if(t){const h=t.holder,x=h.x+h.w/2+h.face*40,y=h.y+h.h/2;const g=ctx.createRadialGradient(x,y,10,x,y,230);
+    g.addColorStop(0,'rgba(255,230,150,.2)');g.addColorStop(1,'rgba(255,230,150,0)');ctx.fillStyle=g;ctx.fillRect(x-230,y-230,460,460);}}
+  // tether line between the brothers
+  if(!kids[0].home&&!kids[1].home){
+    const [a,b]=kids,d=Math.abs(a.x-b.x);
+    if(d>TETHER*0.6){
+      const near=d>TETHER-12;
+      ctx.setLineDash([4,6]);ctx.lineWidth=2;ctx.strokeStyle=near?'rgba(255,90,110,.85)':'rgba(255,214,107,.45)';
+      ctx.beginPath();ctx.moveTo(a.x+a.w/2,a.y+a.h*0.5);ctx.lineTo(b.x+b.w/2,b.y+b.h*0.5);ctx.stroke();ctx.setLineDash([]);
+    }
+  }
+  // kids
+  kids.forEach((k,i)=>{
+    const act=i===state.active&&!k.home;
+    ctx.globalAlpha=act?1:0.65;
+    const bob=k.ground&&Math.abs(k.vx)>0?Math.abs(Math.sin(state.t*14))*2:0;
+    const shake=k.cold>0.5?Math.sin(state.t*70)*2*k.cold:0;ctx.save();ctx.translate(shake,0);
+    ctx.fillStyle=k.col;ctx.fillRect(k.x,k.y+k.h*0.38-bob,k.w,k.h*0.62+bob);
+    ctx.fillStyle='rgba(255,255,255,.35)';for(let y=k.y+k.h*0.45;y<k.y+k.h-3;y+=7)ctx.fillRect(k.x,y,k.w,2);
+    if(k.gown){const gy=k.y+k.h*0.36-bob;ctx.fillStyle=k.gownCol;ctx.fillRect(k.x-2,gy,k.w*0.42+2,k.h*0.6+bob);ctx.fillRect(k.x+k.w*0.58,gy,k.w*0.42+2,k.h*0.6+bob);ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillRect(k.x-2,gy+k.h*0.3,k.w+4,2);}
+    ctx.fillStyle='#f2c8a0';ctx.beginPath();ctx.arc(k.x+k.w/2,k.y+k.h*0.22-bob,k.w*0.45,0,7);ctx.fill();
+    ctx.fillStyle=k.hair;ctx.beginPath();ctx.arc(k.x+k.w/2,k.y+k.h*0.18-bob,k.w*0.45,Math.PI,0);ctx.fill();
+    ctx.fillStyle='#1a1a2a';ctx.fillRect(k.x+k.w/2+k.face*4-1,k.y+k.h*0.22-bob,2,2);
+    if(k.cold>0.3){ctx.fillStyle=`rgba(120,180,255,${0.5*k.cold})`;ctx.beginPath();ctx.arc(k.x+k.w/2,k.y+k.h*0.22-bob,k.w*0.45,0,7);ctx.fill();}
+    if(k.toy){ // Dylan's little toy dog, always in his hand
+      const tx=k.face>0?k.x+k.w+5:k.x-5,ty=k.y+k.h*0.62-bob,f=k.face;
+      ctx.fillStyle='#d8c3a5';ctx.beginPath();ctx.ellipse(tx,ty,5,3.5,0,0,7);ctx.fill();
+      ctx.beginPath();ctx.arc(tx+f*5,ty-3,3,0,7);ctx.fill();
+      ctx.fillStyle='#8a6a4a';ctx.beginPath();ctx.ellipse(tx+f*4,ty-5,1.3,2.2,0,0,7);ctx.fill();
+      ctx.fillRect(tx-f*6-1,ty-3,2,3);ctx.fillStyle='#1a1a2a';ctx.fillRect(tx+f*7-1,ty-3.5,1.5,1.5);
+    }
+    k.items.forEach(it=>{
+      if(it.id==='slippers'){ctx.fillStyle='#f7a8c8';ctx.fillRect(k.x-2,k.y+k.h-4,9,4);ctx.fillRect(k.x+k.w-7,k.y+k.h-4,9,4);}
+      if(it.id==='torch'&&!k.toy){const tx=k.face>0?k.x+k.w:k.x-8,ty=k.y+k.h*0.5-bob;ctx.fillStyle='#d0d6f0';ctx.fillRect(tx,ty,8,4);ctx.fillStyle='#ffe28c';ctx.fillRect(k.face>0?tx+8:tx-2,ty-1,2,6);}
+    });
+    ctx.restore();
+    if(k.cold>0.05&&!k.home){ctx.fillStyle='rgba(13,19,40,.8)';ctx.fillRect(k.x-4,k.y+k.h+4,k.w+8,4);ctx.fillStyle='#78b4ff';ctx.fillRect(k.x-4,k.y+k.h+4,(k.w+8)*k.cold,4);
+      if(k.cold>0.5){ctx.fillStyle='#9cc8ff';ctx.font='700 11px Fredoka, sans-serif';ctx.fillText('brrr',k.x+k.w+6,k.y+6);}}
+    ctx.globalAlpha=1;
+    ctx.font='600 12px Fredoka, sans-serif';ctx.fillStyle=act?'#ffd66b':'#8d96c4';
+    const label=k.home?k.name+' ✓':(k.tip&&act?k.name+' 🤫':k.name);ctx.fillText(label,k.x+k.w/2-ctx.measureText(label).width/2,k.y-8);
+    if(act){ctx.fillStyle='#ffd66b';ctx.beginPath();ctx.moveTo(k.x+k.w/2-4,k.y-26);ctx.lineTo(k.x+k.w/2+4,k.y-26);ctx.lineTo(k.x+k.w/2,k.y-21);ctx.fill();}
+  });
+  ctx.restore();
+  // night vignette
+  const g=ctx.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,H*0.9);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.45)');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const s=Math.floor(state.t),mm=String(Math.floor(s/60)).padStart(2,'0'),ss=String(s%60).padStart(2,'0');$('clock').textContent=mm+':'+ss;
+}
+
+function drawEatingDog(d){
+  const y=d.floor,bx=d.x+52;
+  d.woof=0;drawAwakeDog(d);
+  ctx.fillStyle='#c7cde8';ctx.beginPath();ctx.ellipse(bx,y-5,14,6,0,0,7);ctx.fill();
+  ctx.fillStyle='#8a5a2e';ctx.beginPath();ctx.ellipse(bx,y-9,9,3,0,0,7);ctx.fill();
+  ctx.fillStyle='#ffd66b';ctx.font='700 14px Fredoka, sans-serif';ctx.fillText(Math.floor(state.t*4)%2?'nom':'nom nom',d.x+30,y-50);
+}
+function drawAwakeDog(d){
+  const f=d.face||1,run=Math.sin(state.t*20)*3,y=d.floor;
+  ctx.save();ctx.translate(d.x,0);ctx.scale(f,1);
+  ctx.fillStyle=d.col;ctx.beginPath();ctx.ellipse(0,y-22,26,11,0,0,7);ctx.fill();
+  ctx.fillRect(-18,y-16,5,16+run*0.3);ctx.fillRect(-8,y-16,5,16-run*0.3);ctx.fillRect(8,y-16,5,16+run*0.3);ctx.fillRect(16,y-16,5,16-run*0.3);
+  ctx.beginPath();ctx.ellipse(28,y-32,12,10,0,0,7);ctx.fill();
+  ctx.fillStyle=d.ear;ctx.beginPath();ctx.ellipse(24,y-41,4,8,-0.3,0,7);ctx.fill();
+  ctx.strokeStyle=d.col;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-24,y-26);ctx.lineTo(-34,y-38+run);ctx.stroke();
+  ctx.fillStyle='#1a1a2a';ctx.beginPath();ctx.arc(32,y-35,2,0,7);ctx.fill();
+  if(d.woof>0)ctx.fillRect(34,y-30,6,4);
+  ctx.restore();
+  if(d.woof>0){ctx.fillStyle='#ff5a6e';ctx.font='700 16px Fredoka, sans-serif';ctx.fillText('WOOF!',d.x+(f>0?22:-72),y-52);}
+  ctx.fillStyle='rgba(141,150,196,.8)';ctx.font='600 11px Fredoka, sans-serif';ctx.fillText(d.name,d.x-14,y-62);
+}
+
+// ---------- sound: everything is synthesised with Web Audio, no files ----------
+const AU={ctx:null,muted:false,next:0,step:0,nb:null};
+const mf=m=>440*2**((m-69)/12);
+function audioInit(){
+  if(AU.ctx){if(AU.ctx.state==='suspended')AU.ctx.resume();return;}
+  try{AU.ctx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return;}
+  AU.master=AU.ctx.createGain();AU.master.gain.value=AU.muted?0:0.5;AU.master.connect(AU.ctx.destination);
+  AU.music=AU.ctx.createGain();AU.music.gain.value=0.4;AU.music.connect(AU.master);
+  AU.sfx=AU.ctx.createGain();AU.sfx.gain.value=0.8;AU.sfx.connect(AU.master);
+  AU.next=AU.ctx.currentTime+0.1;setInterval(schedule,50);
+}
+function tone(f,t,d,type,vol,dest,f2){
+  const o=AU.ctx.createOscillator(),g=AU.ctx.createGain();o.type=type||'square';
+  o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.1,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  o.connect(g);g.connect(dest||AU.sfx);o.start(t);o.stop(t+d+0.03);
+}
+function noise(t,d,freq,vol,dest){
+  if(!AU.nb){const n=AU.ctx.sampleRate;AU.nb=AU.ctx.createBuffer(1,n,n);const a=AU.nb.getChannelData(0);for(let i=0;i<n;i++)a[i]=Math.random()*2-1;}
+  const s=AU.ctx.createBufferSource();s.buffer=AU.nb;const f=AU.ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=freq;f.Q.value=1.2;
+  const g=AU.ctx.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  s.connect(f);f.connect(g);g.connect(dest||AU.sfx);s.start(t);s.stop(t+d+0.03);
+}
+function sfx(n){
+  if(!AU.ctx||AU.muted)return;const t=AU.ctx.currentTime;
+  switch(n){
+    case 'jump':tone(300,t,.15,'square',.07,0,620);break;
+    case 'land':noise(t,.08,300,.2);break;
+    case 'magnet':tone(880,t,.12,'triangle',.2);tone(1320,t+.08,.25,'triangle',.2);break;
+    case 'door':tone(210,t,.5,'sine',.1,0,150);break;
+    case 'swap':tone(520,t,.07,'square',.06);tone(780,t+.06,.08,'square',.06);break;
+    case 'bump':tone(190,t,.1,'square',.07);tone(150,t+.12,.14,'square',.07);break;
+    case 'creak':tone(140,t,.6,'sawtooth',.12,0,85);tone(215,t+.05,.5,'sawtooth',.05,0,160);setTimeout(()=>sfx('alarm'),380);break;
+    case 'alarm':for(let i=0;i<4;i++)tone(i%2?660:880,t+i*.16,.14,'square',.08);break;
+    case 'bark':noise(t,.12,850,.5);tone(280,t,.12,'square',.12,0,170);noise(t+.16,.1,950,.4);tone(300,t+.16,.1,'square',.1,0,190);break;
+    case 'munch':for(let i=0;i<5;i++)noise(t+i*.18,.07,1600,.25);break;
+    case 'chatter':for(let i=0;i<14;i++)noise(t+i*.045,.02,3200,.35);break;
+    case 'thud':noise(t,.18,120,.6);tone(80,t,.2,'sine',.25,0,50);break;
+    case 'crinkle':for(let i=0;i<12;i++)noise(t+i*.035+Math.random()*.02,.025,4000+Math.random()*3000,.3);break;
+    case 'hm':tone(150,t,.35,'sine',.18,0,210);break;
+    case 'mum':tone(420,t,.16,'sawtooth',.09,0,520);tone(520,t+.18,.16,'sawtooth',.09,0,400);tone(400,t+.38,.16,'sawtooth',.09,0,460);tone(460,t+.58,.3,'sawtooth',.09,0,300);break;
+    case 'win':[60,64,67,72,76,79,84].forEach((m,i)=>tone(mf(m),t+i*.09,.3,'triangle',.16));break;
+    case 'lose':[67,63,60,55].forEach((m,i)=>tone(mf(m),t+i*.22,.32,'square',.09));break;
+  }
+}
+// sneaky tiptoe tune in A minor: bass walks up, pizzicato answers; faster with extra hi-hats while a dog chases
+const BASS=[[45,0,0,0,48,0,0,0,52,0,0,0,51,0,52,0],[41,0,0,0,45,0,0,0,48,0,0,0,47,0,48,0],[43,0,0,0,47,0,0,0,50,0,0,0,49,0,50,0],[40,0,0,0,44,0,0,0,47,0,0,0,52,0,0,0]].flat();
+const MEL=[[0,0,64,0,0,0,0,0,0,0,65,64,0,0,0,0],[0,0,69,0,0,0,0,0,0,0,68,69,0,0,0,0],[0,0,67,0,0,0,0,0,71,0,0,0,74,0,0,0],[0,0,68,0,0,0,71,0,0,0,0,0,64,0,0,0]].flat();
+function schedule(){
+  const now=AU.ctx.currentTime;if(AU.next<now)AU.next=now+0.05;
+  while(AU.next<now+0.2){
+    const i=AU.step,t=AU.next,chase=dogs.some(d=>d.awake>0);
+    if(state.run&&!AU.muted){
+      if(BASS[i])tone(mf(BASS[i]),t,.22,'triangle',.25,AU.music);
+      if(MEL[i])tone(mf(MEL[i]),t,.09,'square',.05,AU.music);
+      if(i%4===2||(chase&&i%2===1))noise(t,.03,7000,chase?.14:.07,AU.music);
+    }
+    AU.next+=chase?0.1:0.14;AU.step=(i+1)%64;
+  }
+}
+function toggleMute(){
+  AU.muted=!AU.muted;if(AU.master)AU.master.gain.value=AU.muted?0:0.5;
+  $('mute').innerHTML=AU.muted?'🔇<span class="lbl"> Muted</span>':'🔊<span class="lbl"> Sound</span>';
+}
+
+// ---------- flow ----------
+function show(html,btn,fn,cls){
+  $('overlay').hidden=false;
+  $('overlay').innerHTML=`<div class="card ${cls||''}">${html}<button id="ob">${btn}</button></div>`;
+  $('ob').onclick=fn;$('ob').focus();
+}
+function begin(){audioInit();clearSave();$('overlay').hidden=true;build();state.run=true;toast('Stand by your dressing gown and press '+HANDKEY+' to put it on. Its pockets carry things: Seth’s has 2, Dylan’s has 1.',3600);cv.focus();}
+function dadOver(k){state.run=false;sfx('lose');clearSave();state.flash={room:'Kitchen',t:9};
+  show(`<h1>Busted!</h1><p>Dad opened his eyes on the lounge sofa and spotted ${k.name} sneaking past the door. Back to bed, boys.</p>`,'Try again',begin);}
+function mumCatch(){
+  mum.on=false;mum.done=true;
+  const ch=has('choc');
+  if(ch){const h=ch.holder;ch.gone=true;h.items=h.items.filter(i=>i!==ch);hud();sfx('munch');
+    toast(`Mum caught them, but ${h.name} gave her the chocolate. "Just this once." She went back to bed.`,3200);return;}
+  kids.forEach((k,i)=>{const c=checkpoints[0];k.x=c.x+i*30;k.y=c.y;k.vx=k.vy=0;k.cp=0;});
+  state.active=0;state.flash={room:'Back bedroom',t:1};hud();sfx('lose');
+  toast('<b>"GET BACK TO BED!"</b> Mum caught them and marched both boys back to the bedroom.',3200);
+}
+function gameOver(){state.run=false;sfx('lose');clearSave();show('<h1>Dad\'s awake!</h1><p>Five alerts and his phone wouldn\'t stop buzzing. Back to bed, boys.</p>','Try again',begin);}
+function win(){state.run=false;sfx('win');clearSave();const s=Math.floor(state.t);
+  show(`<h1>Snug secured</h1><p>Both boys are on the sofa and the house never noticed.</p><p class="keys">Time ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')} · Alerts ${state.alerts}/${MAXALERTS}</p>`,'Play again',begin);}
+const introHTML=$('overlay').querySelector('.card').innerHTML.replace(/<button[\s\S]*<\/button>/,'');
+function intro(){state.run=false;clearSave();build();toastT=0;$('toast').dataset.hide='1';show(introHTML,'Start sneaking',begin,'intro');}
+$('start').onclick=begin;
+// on phones the tiles show only a picture and a title; tap one to open its description
+$('overlay').addEventListener('click',e=>{const t=e.target.closest('.tile');if(t)t.classList.toggle('open');});
+
+// ---------- keep the game across reloads ----------
+// A phone can reload the page (pull-to-refresh, switching apps, or an update to this page),
+// so the game is saved every second and can carry on instead of starting again.
+const SAVE='snug-sneak-save';let saveT=0;
+function snapshot(){
+  if(!state||!state.run)return null;
+  const ki=k=>k?kids.indexOf(k):-1;
+  return {v:1,at:Date.now(),kids:kids.map(k=>({...k,items:k.items.map(i=>i.id)})),items:items.map(i=>({...i,holder:ki(i.holder)})),
+    doors,magnets,gowns,litter,dogs:dogs.map(d=>({...d,chase:ki(d.chase)})),dad,mum,state:{...state,pending:ki(state.pending)}};
+}
+function restore(s){
+  build();
+  items.forEach((it,i)=>Object.assign(it,s.items[i],{holder:s.items[i].holder>=0?kids[s.items[i].holder]:null}));
+  kids.forEach((k,i)=>Object.assign(k,s.kids[i],{items:s.kids[i].items.map(id=>items.find(x=>x.id===id)).filter(Boolean)}));
+  doors.forEach((d,i)=>Object.assign(d,s.doors[i]));magnets.forEach((m,i)=>Object.assign(m,s.magnets[i]));gowns.forEach((g,i)=>Object.assign(g,s.gowns[i]));
+  litter=s.litter;dogs.forEach((d,i)=>Object.assign(d,s.dogs[i],{chase:s.dogs[i].chase>=0?kids[s.dogs[i].chase]:null}));
+  Object.assign(dad,s.dad);Object.assign(mum,s.mum);
+  const pk=s.state.pending>=0?kids[s.state.pending]:null;
+  Object.assign(state,s.state,{pending:null,freeze:0,run:true});
+  if(pk){const cp=checkpoints[pk.cp];pk.x=cp.x;pk.y=cp.y;pk.vx=pk.vy=0;}
+  if(state.alerts>=MAXALERTS)gameOver();
+}
+function saveGame(){try{const s=snapshot();if(s)localStorage.setItem(SAVE,JSON.stringify(s));}catch(e){}}
+function clearSave(){try{localStorage.removeItem(SAVE);}catch(e){}}
+function loadSave(){try{const s=JSON.parse(localStorage.getItem(SAVE)||'null');return s&&s.v===1&&Date.now()-s.at<2*3600e3?s:null;}catch(e){return null;}}
+function resume(s){restore(s);if(!state.run)return;$('overlay').hidden=true;hud();toast('Welcome back. Carrying on where you left off.',2200);}
+addEventListener('pointerdown',()=>audioInit(),{once:true});addEventListener('keydown',()=>audioInit(),{once:true});
+// Reset needs two taps, so a stray tap on a phone doesn't throw the game away
+let resetArm=0;
+$('restart').onclick=()=>{const b=$('restart');b.blur();
+  if(!state.run||Date.now()-resetArm<2500){resetArm=0;b.classList.remove('arm');intro();return;}
+  resetArm=Date.now();b.classList.add('arm');toast('Tap Reset again to start over.',2200);
+  setTimeout(()=>b.classList.remove('arm'),2500);};
+$('mute').onclick=()=>{$('mute').blur();toggleMute();};
+$('fs').onclick=()=>{$('fs').blur();const w=document.querySelector('.wrap');
+  try{const p=document.fullscreenElement?document.exitFullscreen():w.requestFullscreen();if(p&&p.catch)p.catch(()=>toast('Full screen is not allowed here. Open the game in its own browser tab.'));}catch(e){}};
+
+build();
+let last=performance.now();
+function loop(now){
+  const dt=Math.min(0.033,(now-last)/1000);last=now;
+  if(state.run){step(dt);saveT+=dt;if(saveT>1){saveT=0;saveGame();}}
+  draw();requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+// after an update to this page, carry straight on; after a reload, offer to continue
+window.claude?.hot?.snapshot?.(()=>snapshot()||{});
+const boot=d=>{
+  if(d&&d.v===1){resume(d);return;}
+  const s=loadSave();if(s){const r=$('resume');if(r){r.hidden=false;r.onclick=()=>{audioInit();resume(s);};}}
+};
+window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??{});
+})();
+</script>
+
+</body>
+</html>
