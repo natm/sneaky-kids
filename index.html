@@ -154,7 +154,7 @@ button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
         <p class="keys"><kbd>←</kbd><kbd>→</kbd> move <kbd>↑</kbd>/<kbd>Space</kbd> jump <kbd>Shift</kbd>/<kbd>↓</kbd> tiptoe <kbd>Tab</kbd> swap <kbd>E</kbd> pick up/put down <kbd>M</kbd> sound</p>
         <button id="start">Start sneaking</button>
         <button id="resume" hidden style="background:var(--panel);color:var(--ink);border:1px solid #3a4782">Continue last game</button>
-        <p class="ver">Version 202611141746</p>
+        <p class="ver">Version 20261114174703</p>
       </div>
     </div>
   </div>
@@ -861,7 +861,7 @@ requestAnimationFrame(loop);
 // ---------- updates: check version.json every minute and reload into a new version ----------
 // GitHub Pages lets browsers cache index.html for up to 10 minutes, so open games could run an
 // old version. scripts/bump-version.sh sets this number and version.json together.
-const GAME_VERSION='202611141746';
+const GAME_VERSION='20261114174703';
 async function checkVersion(){
   try{
     const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;

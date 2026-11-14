@@ -4,7 +4,7 @@
 # so run this before every commit that changes the game.
 set -e
 cd "$(dirname "$0")/.."
-v=$(date -u +%Y%m%d%H%M)
+v=$(date -u +%Y%m%d%H%M%S)
 sed -i.bak \
   -e "s/const GAME_VERSION='[^']*'/const GAME_VERSION='$v'/" \
   -e "s/<p class=\"ver\">Version [^<]*</<p class=\"ver\">Version $v</" \
