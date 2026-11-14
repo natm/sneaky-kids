@@ -67,6 +67,7 @@ canvas{display:block;width:100%;height:100%}
 .tile span{display:block;font-size:13px;line-height:1.35;color:var(--ink)}
 kbd{font-family:var(--mono);font-size:12px;background:var(--panel);border:1px solid #3a4782;border-bottom-width:2px;border-radius:5px;padding:1px 6px;margin:0 2px;color:var(--ink)}
 .card .keys{line-height:2}
+.card .ver{font-size:11px;color:var(--dim);margin:0}
 .card .touch{display:none;color:var(--dim);font-size:13px;line-height:1.6}
 /* phones: compact two-column picture grid, details on tap, touch controls instead of keys */
 @media (max-width:600px), (pointer:coarse) and (max-height:500px){
@@ -149,6 +150,7 @@ button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
         <p class="keys"><kbd>←</kbd><kbd>→</kbd> move <kbd>↑</kbd>/<kbd>Space</kbd> jump <kbd>Shift</kbd>/<kbd>↓</kbd> tiptoe <kbd>Tab</kbd> swap <kbd>E</kbd> pick up/put down <kbd>M</kbd> sound</p>
         <button id="start">Start sneaking</button>
         <button id="resume" hidden style="background:var(--panel);color:var(--ink);border:1px solid #3a4782">Continue last game</button>
+        <p class="ver">Version 202611141554</p>
       </div>
     </div>
   </div>
@@ -808,10 +810,31 @@ function loop(now){
 }
 requestAnimationFrame(loop);
 // after an update to this page, carry straight on; after a reload, offer to continue
+// ---------- updates: check version.json every minute and reload into a new version ----------
+// GitHub Pages lets browsers cache index.html for up to 10 minutes, so open games could run an
+// old version. scripts/bump-version.sh sets this number and version.json together.
+const GAME_VERSION='202611141554';
+async function checkVersion(){
+  try{
+    const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;
+    const v=String((await r.json()).version||'');
+    if(!v||v===GAME_VERSION)return;
+    let tried='';try{tried=sessionStorage.getItem('sk-tried')||'';}catch(e){}
+    if(tried===v)return; // already reloaded once for this version; wait for the server to catch up
+    try{sessionStorage.setItem('sk-tried',v);sessionStorage.setItem('sk-auto',state.run?'1':'');}catch(e){}
+    saveGame();
+    toast('A new version of the game is ready. Updating\u2026',1500);
+    setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('v',v);location.replace(u.toString());},1200);
+  }catch(e){}
+}
+if(location.protocol.startsWith('http'))setInterval(checkVersion,60000);
 window.claude?.hot?.snapshot?.(()=>snapshot()||{});
 const boot=d=>{
   if(d&&d.v===1){resume(d);return;}
-  const s=loadSave();if(s){const r=$('resume');if(r){r.hidden=false;r.onclick=()=>{audioInit();resume(s);};}}
+  const s=loadSave();
+  let auto='';try{auto=sessionStorage.getItem('sk-auto')||'';sessionStorage.removeItem('sk-auto');}catch(e){}
+  if(s&&auto){resume(s);toast('Updated to the latest version. Carrying on where you left off.',2400);return;}
+  if(s){const r=$('resume');if(r){r.hidden=false;r.onclick=()=>{audioInit();resume(s);};}}
 };
 window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??{});
 })();
