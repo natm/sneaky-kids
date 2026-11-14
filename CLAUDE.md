@@ -31,7 +31,7 @@ It's 2am at Llwynygorras. Seth and Dylan sneak from the back bedroom down to the
   | Motion sensor looking | 1.6 s of 5.2 s | 2.2 s of 4.6 s | 2.8 s of 4.6 s |
   | Dad on the sofa / looks for | never | 1 in 4 / 1.4 s | 1 in 2 / 2 s |
   | Mum chases / her speed | 15% / 130 | 40% / 160 | 70% / 185 |
-  | Clothes + wrappers | none | 0–2 each | 2–3 + 2 |
+  | Clothes + wrappers | none | 0–2 each | 1–2 clothes + 2 wrappers (was 2–3 clothes; too tricky on the landing, Nat 2026-11-14) |
   | Dog wake distance / chase speed | 70% / 150 | 100% / 200 | 120% / 225 |
   | Seconds before cold without a gown | 20 | 10 | 7 |
   | How far apart the boys can get | 320 | 240 | 200 |

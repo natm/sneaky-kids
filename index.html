@@ -182,7 +182,7 @@ const MODES={
     alerts:8,senOn:1.6,senCycle:5.2,dad:0,dadLook:1.2,mum:0.15,mumSpeed:130,litter:0,dogR:0.7,dogSpeed:150,cold:20,tether:320},
   normal:{label:'Normal',blurb:'5 alerts. Anything can happen: Dad on the sofa now and then, Mum sometimes, a bit of mess.',
     alerts:5,senOn:2.2,senCycle:4.6,dad:0.25,dadLook:1.4,mum:0.4,mumSpeed:160,litter:1,dogR:1,dogSpeed:200,cold:10,tether:240},
-  hard:{label:'Hard',blurb:'3 alerts. Sensors look for longer, light sleepers, Dad and Mum more often, mess everywhere.',
+  hard:{label:'Hard',blurb:'3 alerts. Sensors look for longer, light sleepers, Dad and Mum more often, more mess on the floor.',
     alerts:3,senOn:2.8,senCycle:4.6,dad:0.5,dadLook:2,mum:0.7,mumSpeed:185,litter:2,dogR:1.2,dogSpeed:225,cold:7,tether:200},
 };
 let mode=MODES.normal,modeKey='normal';
@@ -255,7 +255,7 @@ function build(){
   ].map(i=>Object.assign(i,{holder:null,gone:false}));
   // random mess each game: 0-2 piles of clothes on the landing, 0-2 sweet wrappers in the kitchen
   const pick=(c,n)=>c.sort(()=>Math.random()-0.5).slice(0,n);
-  litter=[...pick([520,650,780],[0,Math.floor(Math.random()*3),2+Math.floor(Math.random()*2)][mode.litter]).map(x=>({kind:'clothes',x:x-17,w:34,y:230,room:'Main landing',seed:Math.random()})),
+  litter=[...pick([520,650,780],[0,Math.floor(Math.random()*3),1+Math.floor(Math.random()*2)][mode.litter]).map(x=>({kind:'clothes',x:x-17,w:34,y:230,room:'Main landing',seed:Math.random()})),
     ...pick([2605,2655],[0,Math.floor(Math.random()*3),2][mode.litter]).map(x=>({kind:'wrapper',x:x-9,w:18,y:500,room:'Kitchen',seed:Math.random()}))];
   gowns=[{owner:0,x:248,y:160,col:'#2f4a8a',got:false},{owner:1,x:292,y:160,col:'#2f7a55',got:false}];
   magnets=[{x:310,y:108,got:false},{x:1010,y:120,got:false},{x:1640,y:385,got:false}];
