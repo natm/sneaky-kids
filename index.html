@@ -155,7 +155,7 @@ button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
         <p class="keys"><kbd>←</kbd><kbd>→</kbd> move <kbd>↑</kbd>/<kbd>Space</kbd> jump <kbd>Shift</kbd>/<kbd>↓</kbd> tiptoe <kbd>Tab</kbd> swap <kbd>E</kbd> pick up/put down <kbd>M</kbd> sound</p>
         <button id="start">Start sneaking</button>
         <button id="resume" hidden style="background:var(--panel);color:var(--ink);border:1px solid #3a4782">Continue last game</button>
-        <p class="ver">Version 202611141621</p>
+        <p class="ver">Version 202611141626</p>
       </div>
     </div>
   </div>
@@ -850,7 +850,7 @@ requestAnimationFrame(loop);
 // ---------- updates: check version.json every minute and reload into a new version ----------
 // GitHub Pages lets browsers cache index.html for up to 10 minutes, so open games could run an
 // old version. scripts/bump-version.sh sets this number and version.json together.
-const GAME_VERSION='202611141621';
+const GAME_VERSION='202611141626';
 async function checkVersion(){
   try{
     const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;
@@ -864,7 +864,9 @@ async function checkVersion(){
     setTimeout(()=>{const u=new URL(location.href);u.searchParams.set('v',v);location.replace(u.toString());},1200);
   }catch(e){}
 }
-if(location.protocol.startsWith('http'))setInterval(checkVersion,60000);
+// check soon after opening (a cached old copy reloads straight away), every minute, and on coming back to the tab
+if(location.protocol.startsWith('http')){setTimeout(checkVersion,1500);setInterval(checkVersion,60000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkVersion();});}
 window.claude?.hot?.snapshot?.(()=>snapshot()||{});
 const boot=d=>{
   if(d&&d.v===1){resume(d);return;}

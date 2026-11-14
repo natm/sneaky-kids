@@ -15,7 +15,7 @@ It's 2am at Llwynygorras. Seth and Dylan sneak from the back bedroom down to the
 - One self-contained file, `index.html`: inline CSS and JS, no build step, no libraries. Fonts from Google Fonts with fallbacks; sound is synthesised with Web Audio.
 - World is 540 units tall; the view width follows the screen shape. The route runs: back bedroom → main landing → stairs → downstairs hallway → kitchen → snug.
 - The game saves itself to `localStorage` every second so a reload (pull-to-refresh, switching apps) can carry on.
-- **Versioning and cache busting** (Nat, 2026-11-14): `version.json` holds the current version, and `index.html` has the same number in `GAME_VERSION`. Open games fetch `version.json` every minute (no cache); if it differs, they save, reload with `?v=<version>` to skip GitHub Pages' 10-minute cache, and carry on where they were. **Run `scripts/bump-version.sh` before every commit that changes the game**, so both numbers change together (a UTC timestamp, `YYYYMMDDHHMM`).
+- **Versioning and cache busting** (Nat, 2026-11-14): `version.json` holds the current version, and `index.html` has the same number in `GAME_VERSION`. Open games fetch `version.json` (no cache) 1.5 s after opening, every minute, and when the tab comes back into view; if it differs, they save, reload with `?v=<version>` to skip GitHub Pages' 10-minute cache, and carry on where they were. **Run `scripts/bump-version.sh` before every commit that changes the game**, so both numbers change together (a UTC timestamp, `YYYYMMDDHHMM`).
 
 ## Game rules (current)
 
