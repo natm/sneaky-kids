@@ -101,7 +101,7 @@ kbd{font-family:var(--mono);font-size:12px;background:var(--panel);border:1px so
 .card .keys{color:var(--dim);font-size:13px}
 button{font-family:var(--display);font-weight:600;font-size:16px;color:#1a1300;background:var(--moon);border:0;border-radius:999px;padding:10px 22px;cursor:pointer;align-self:center}
 button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-.pad{display:none;justify-content:space-between;gap:10px;user-select:none;-webkit-user-select:none;touch-action:none}
+.pad{-webkit-touch-callout:none;display:none;justify-content:space-between;gap:10px;user-select:none;-webkit-user-select:none;touch-action:none}
 .pad div{display:flex;gap:10px}
 .pad button{background:var(--panel);color:var(--ink);border:1px solid #3a4782;width:64px;height:56px;padding:0;font-size:20px;border-radius:14px}
 .pad button.act{background:#2b3766}
@@ -150,7 +150,7 @@ button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
         <p class="keys"><kbd>←</kbd><kbd>→</kbd> move <kbd>↑</kbd>/<kbd>Space</kbd> jump <kbd>Shift</kbd>/<kbd>↓</kbd> tiptoe <kbd>Tab</kbd> swap <kbd>E</kbd> pick up/put down <kbd>M</kbd> sound</p>
         <button id="start">Start sneaking</button>
         <button id="resume" hidden style="background:var(--panel);color:var(--ink);border:1px solid #3a4782">Continue last game</button>
-        <p class="ver">Version 202611141554</p>
+        <p class="ver">Version 202611141612</p>
       </div>
     </div>
   </div>
@@ -265,20 +265,31 @@ function build(){
 const keys={left:false,right:false,sneak:false};let jumpQ=0,swapQ=false,handQ=false;
 const map={ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ShiftLeft:'sneak',ShiftRight:'sneak',ArrowDown:'sneak',KeyS:'sneak'};
 addEventListener('keydown',e=>{
-  if(map[e.code]){keys[map[e.code]]=true;e.preventDefault();}
+  if(map[e.code]){kb[map[e.code]]=true;syncKeys();e.preventDefault();}
   if(['ArrowUp','KeyW','Space'].includes(e.code)){if(!e.repeat)jumpQ=0.12;e.preventDefault();}
   if(e.code==='KeyM'&&!e.repeat)toggleMute();
   if(['KeyE','KeyF'].includes(e.code)&&!e.repeat){handQ=true;e.preventDefault();}
   if(['Tab','KeyQ'].includes(e.code)){if(!e.repeat)swapQ=true;e.preventDefault();}
 });
-addEventListener('keyup',e=>{if(map[e.code])keys[map[e.code]]=false;});
-addEventListener('blur',()=>{keys.left=keys.right=keys.sneak=false;});
+addEventListener('keyup',e=>{if(map[e.code]){kb[map[e.code]]=false;syncKeys();}});
+// Held keys come from the keyboard (kb) and from fingers on the touch buttons (held).
+// Phones don't always send "pointerup" (long press, system swipe, switching apps), so a
+// touch button is let go on every way a touch can end; otherwise a boy keeps walking by himself.
+const kb={left:false,right:false,sneak:false},held=new Map(); // held: pointerId -> 'left'|'right'|'sneak'
+function syncKeys(){const v=[...held.values()];for(const k of ['left','right','sneak'])keys[k]=kb[k]||v.includes(k);}
+function releaseAll(){held.clear();kb.left=kb.right=kb.sneak=false;syncKeys();}
+addEventListener('blur',releaseAll);addEventListener('pagehide',releaseAll);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseAll();});
+const letGo=e=>{if(held.delete(e.pointerId))syncKeys();};
+addEventListener('pointerup',letGo);addEventListener('pointercancel',letGo);
+addEventListener('touchend',e=>{if(!e.touches.length&&held.size){held.clear();syncKeys();}});
+addEventListener('touchcancel',e=>{if(!e.touches.length&&held.size){held.clear();syncKeys();}});
+$('pad').addEventListener('contextmenu',e=>e.preventDefault());
 document.querySelectorAll('#pad button').forEach(b=>{
   const k=b.dataset.k;
-  b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);
-    if(k==='jump')jumpQ=0.12;else if(k==='swap')swapQ=true;else if(k==='hand')handQ=true;else keys[k]=true;});
-  const up=()=>{if(k==='left'||k==='right'||k==='sneak')keys[k]=false;};
-  b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);
+  b.addEventListener('pointerdown',e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId);}catch(_){}
+    if(k==='jump')jumpQ=0.12;else if(k==='swap')swapQ=true;else if(k==='hand')handQ=true;else{held.set(e.pointerId,k);syncKeys();}});
+  b.addEventListener('pointerup',letGo);b.addEventListener('pointercancel',letGo);b.addEventListener('lostpointercapture',letGo);
 });
 
 // ---------- helpers ----------
@@ -813,7 +824,7 @@ requestAnimationFrame(loop);
 // ---------- updates: check version.json every minute and reload into a new version ----------
 // GitHub Pages lets browsers cache index.html for up to 10 minutes, so open games could run an
 // old version. scripts/bump-version.sh sets this number and version.json together.
-const GAME_VERSION='202611141554';
+const GAME_VERSION='202611141612';
 async function checkVersion(){
   try{
     const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;
